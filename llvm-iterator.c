@@ -7,36 +7,70 @@
 #include <llvm-c/BitWriter.h>
 
 void print_instruction_info(LLVMValueRef instruction) {
-    if (LLVMIsABinaryOperator(instruction)) {
-        printf("\n(binary operator!)\n");
-    } else {
-        printf("\n");
-    }
+    printf("\n");
 
-    printf("instruction: ");
-
+    // Get the opcode for this instruction
+    // There are many more, only handling a few cases here for example
     LLVMOpcode opcode = LLVMGetInstructionOpcode(instruction);
     switch (opcode) {
         case LLVMRet:
-            printf("ret\n");
+            printf("__ret__\n");
             break;
         case LLVMAdd:
-            printf("add\n");
+            printf("__add__\n");
             break;
         case LLVMLoad:
-            printf("load\n");
+            printf("__load__\n");
             break;
         case LLVMAlloca:
-            printf("alloca\n");
+            printf("__alloca__\n");
             break;
         case LLVMStore:
-            printf("store\n");
+            printf("__store__\n");
             break;
         case LLVMCall:
-            printf("call\n");
+            printf("__call__\n");
             break;
         default:
             printf("unrecognized opcode %i\n", opcode);
+    }
+
+    if (LLVMIsABinaryOperator(instruction)) {
+        printf("type: binary operator\n");
+    }
+
+    int n_operands = LLVMGetNumOperands(instruction);
+
+    for (int i = 0; i < n_operands; i++) {
+        printf("\noperand %i: ", i + 1);
+        LLVMValueRef op = LLVMGetOperand(instruction, i);
+        if (LLVMIsAConstant(op)) {
+            printf("constant\n");
+        } else {
+            printf("not a constant\n");
+        }
+
+        // Print operand type
+        LLVMValueKind operand_type = LLVMGetValueKind(op);
+        switch (operand_type) {
+            case LLVMConstantExprValueKind:
+                printf("type = constant expression\n");
+                break;
+            case LLVMConstantIntValueKind:
+                printf("type = integer\n");
+                break;
+            case LLVMFunctionValueKind:
+                printf("type = function\n");
+                break;
+            case LLVMInstructionValueKind :
+                printf("type = instruction\n");
+                break;
+            default:
+                printf("unrecognized operand type %i\n", operand_type);
+        }
+
+        // Print operand value
+        printf("value = %s\n", LLVMPrintValueToString(op));
     }
 }
 
@@ -48,9 +82,9 @@ int main(const int argc, const char *const argv[]) {
 
     const char *const infile = argv[1];
 
+    LLVMMemoryBufferRef memoryBuffer;
     // this should be allocated right? docs from LLVMCreateMemoryBuff..
     // aren't great?
-    LLVMMemoryBufferRef memoryBuffer;
     char *message;
     int r = LLVMCreateMemoryBufferWithContentsOfFile(infile, &memoryBuffer, &message);
     if (r != 0) {
@@ -74,12 +108,12 @@ int main(const int argc, const char *const argv[]) {
     // loop through functions
     for (LLVMValueRef fun = LLVMGetFirstFunction(module);
          fun; fun = LLVMGetNextFunction(fun)) {
-        printf("loop through function\n");
+        printf("\nloop through function\n");
 
         // loop through basic blocks
         for (LLVMBasicBlockRef block = LLVMGetFirstBasicBlock(fun);
              block; block = LLVMGetNextBasicBlock(block)) {
-                printf("block!\n");
+                printf("\nloop through block\n");
 
                 // loop through instructions
                 for (LLVMValueRef instr = LLVMGetFirstInstruction(block);

@@ -30,7 +30,13 @@ References
 
 LLVM C API docs:
 
-https://llvm.org/doxygen/group__LLVMC.html (Core and BitReader mostly)
+https://llvm.org/doxygen/group__LLVMCBitReader.html
+
+https://llvm.org/doxygen/group__LLVMCCoreMemoryBuffers.html
+
+https://llvm.org/doxygen/group__LLVMCCoreValueInstruction.html
+
+https://llvm.org/doxygen/group__LLVMCCoreValueUser.html
 
 Parser example code and writeup:
 
