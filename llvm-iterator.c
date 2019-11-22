@@ -128,7 +128,7 @@ int main(const int argc, const char *const argv[]) {
     LLVMDisposeMemoryBuffer(memoryBuffer);
 
     // Open file to write json representation to
-    FILE* f = fopen("output.json", "w");
+    FILE* f = fopen("../output.json", "w");
     fprintf(f, "{\"functions\":[");
 
     // loop through functions
