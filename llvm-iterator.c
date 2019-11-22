@@ -1,77 +1,99 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <llvm-c/Core.h>
 #include <llvm-c/BitReader.h>
 #include <llvm-c/BitWriter.h>
 
-void print_instruction_info(LLVMValueRef instruction) {
-    printf("\n");
+#define BUFSIZE 1000
+
+void print_operand_info(FILE* f, LLVMValueRef instruction) {
+    fprintf(f, "[");
+
+    int n_operands = LLVMGetNumOperands(instruction);
+    for (int i = 0; i < n_operands; i++) {
+        fprintf(f, "{");
+        LLVMValueRef op = LLVMGetOperand(instruction, i);
+        if (LLVMIsAConstant(op)) {
+            fprintf(f, "\"isConstant\": true");
+        } else {
+            fprintf(f, "\"isConstant\": false");
+        }
+
+        // // Print operand type
+        // LLVMTypeKind operand_type = LLVMGetTypeKind(op);
+        // printf("%s\n", LLVMPrintTypeToString(operand_type));
+
+        // Print operand value
+        LLVMValueKind value_kind = LLVMGetValueKind(op);
+        fprintf(f, ",\"valueKind\":");
+        switch (value_kind) {
+            case LLVMConstantExprValueKind:
+                fprintf(f, "\"constant expression\"");
+                break;
+            case LLVMConstantIntValueKind:
+                fprintf(f, "\"integer\"");
+                break;
+            case LLVMFunctionValueKind:
+                fprintf(f, "\"function\"");
+                break;
+            case LLVMInstructionValueKind :
+                fprintf(f, "\"instruction\"");
+                break;
+            default:
+                fprintf(f, "\"unrecognized value kind %i\"", value_kind);
+        }
+
+        // // Print operand value
+        // printf("value = %s\n", LLVMPrintValueToString(op));
+        fprintf(f, "}");
+        if (i < n_operands - 1) {
+            fprintf(f, ",");
+        }
+    }
+    fprintf(f, "]");
+}
+
+void print_instruction_info(FILE* f, LLVMValueRef instruction) {
+    fprintf(f, "{");
 
     // Get the opcode for this instruction
     // There are many more, only handling a few cases here for example
+    fprintf(f, "\"opcode\":");
     LLVMOpcode opcode = LLVMGetInstructionOpcode(instruction);
     switch (opcode) {
+        case LLVMBr:
+            fprintf(f,"\"br\"");
+            break;
         case LLVMRet:
-            printf("__ret__\n");
+            fprintf(f, "\"ret\"");
             break;
         case LLVMAdd:
-            printf("__add__\n");
+            fprintf(f, "\"add\"");
             break;
         case LLVMLoad:
-            printf("__load__\n");
+            fprintf(f, "\"load\"");
             break;
         case LLVMAlloca:
-            printf("__alloca__\n");
+            fprintf(f, "\"alloca\"");
             break;
         case LLVMStore:
-            printf("__store__\n");
+            fprintf(f, "\"store\"");
             break;
         case LLVMCall:
-            printf("__call__\n");
+            fprintf(f, "\"call\"");
+            break;
+        case LLVMICmp:
+            fprintf(f, "\"icmp\"");
             break;
         default:
-            printf("unrecognized opcode %i\n", opcode);
+            fprintf(f, "\"unrecognized opcode %i\"", opcode);
     }
-
-    if (LLVMIsABinaryOperator(instruction)) {
-        printf("type: binary operator\n");
-    }
-
-    int n_operands = LLVMGetNumOperands(instruction);
-
-    for (int i = 0; i < n_operands; i++) {
-        printf("\noperand %i: ", i + 1);
-        LLVMValueRef op = LLVMGetOperand(instruction, i);
-        if (LLVMIsAConstant(op)) {
-            printf("constant\n");
-        } else {
-            printf("not a constant\n");
-        }
-
-        // Print operand type
-        LLVMValueKind operand_type = LLVMGetValueKind(op);
-        switch (operand_type) {
-            case LLVMConstantExprValueKind:
-                printf("type = constant expression\n");
-                break;
-            case LLVMConstantIntValueKind:
-                printf("type = integer\n");
-                break;
-            case LLVMFunctionValueKind:
-                printf("type = function\n");
-                break;
-            case LLVMInstructionValueKind :
-                printf("type = instruction\n");
-                break;
-            default:
-                printf("unrecognized operand type %i\n", operand_type);
-        }
-
-        // Print operand value
-        printf("value = %s\n", LLVMPrintValueToString(op));
-    }
+    fprintf(f, ",\"operands\":");
+    print_operand_info(f, instruction);
+    fprintf(f, "}");
 }
 
 int main(const int argc, const char *const argv[]) {
@@ -105,25 +127,50 @@ int main(const int argc, const char *const argv[]) {
     // done with the memory buffer now, so dispose of it
     LLVMDisposeMemoryBuffer(memoryBuffer);
 
+    // Open file to write json representation to
+    FILE* f = fopen("output.json", "w");
+    fprintf(f, "{\"functions\":[");
+
     // loop through functions
-    for (LLVMValueRef fun = LLVMGetFirstFunction(module);
-         fun; fun = LLVMGetNextFunction(fun)) {
-        printf("\nloop through function\n");
+    LLVMValueRef firstFun = LLVMGetFirstFunction(module);
+    LLVMValueRef lastFun = LLVMGetLastFunction(module);
+    for (LLVMValueRef fun = firstFun; fun; fun = LLVMGetNextFunction(fun)) {
+        fprintf(f, "{\"blocks\":[");
 
         // loop through basic blocks
-        for (LLVMBasicBlockRef block = LLVMGetFirstBasicBlock(fun);
-             block; block = LLVMGetNextBasicBlock(block)) {
-                printf("\nloop through block\n");
+        LLVMBasicBlockRef firstBlock = LLVMGetFirstBasicBlock(fun);
+        LLVMBasicBlockRef lastBlock = LLVMGetLastBasicBlock(fun);
+        for (LLVMBasicBlockRef block = firstBlock; block;
+            block = LLVMGetNextBasicBlock(block)) {
+                fprintf(f, "{\"label%s\":[", LLVMGetBasicBlockName(block));
 
                 // loop through instructions
-                for (LLVMValueRef instr = LLVMGetFirstInstruction(block);
-                     instr; instr = LLVMGetNextInstruction(instr)) {
-                        print_instruction_info(instr);
+                LLVMValueRef firstInstr = LLVMGetFirstInstruction(block);
+                LLVMValueRef lastInstr = LLVMGetLastInstruction(block);
+                for (LLVMValueRef instr = firstInstr; instr;
+                    instr = LLVMGetNextInstruction(instr)) {
+                        print_instruction_info(f, instr);
+                        if (instr != lastInstr) {
+                            fprintf(f, ",");
+                        }
                     }
+
+                fprintf(f, "]}");
+                if (block != lastBlock) {
+                    fprintf(f, ",");
+                }
+            }
+
+            fprintf(f, "]}");
+            if (fun != lastFun) {
+                fprintf(f, ",");
             }
     }
 
+    fprintf(f, "]}");
+
     LLVMDisposeModule(module);
+    fclose(f);
 
     return 0;
 }

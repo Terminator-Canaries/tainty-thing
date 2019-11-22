@@ -11,9 +11,12 @@ Generate .bc file:
 
     clang -c -emit-llvm testprogram.ll -o testprogram.bc
 
-You must have llvm installed.
+You must have llvm and cmake installed.
 If your llvm is not at /usr/local/opt/llvm, replace this path with the
 path to your llvm.
+
+`brew install llvm`
+`brew install cmake`
 
 Setup build:
 
