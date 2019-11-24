@@ -6,9 +6,9 @@
 #include <map>
 #include <utility>
 
-#include <llvm-c/Core.h>
 #include <llvm-c/BitReader.h>
 #include <llvm-c/BitWriter.h>
+#include <llvm-c/Core.h>
 
 #define BUFSIZE 1000
 
@@ -55,7 +55,7 @@ void print_operand_info(FILE* f, LLVMValueRef instruction) {
             case LLVMConstantIntValueKind:
                 fprintf(f, "\"integer\"");
                 fprintf(f, ",\"zero_extended_value\": %llu", LLVMConstIntGetZExtValue(op));
-                fprintf(f, ",\"sign_extedned_value\": %llu", LLVMConstIntGetSExtValue(op));
+                fprintf(f, ",\"sign_extended_value\": %llu", LLVMConstIntGetSExtValue(op));
                 break;
             case LLVMFunctionValueKind:
                 fprintf(f, "\"function\"");
@@ -120,6 +120,23 @@ void print_instruction_info(FILE* f, LLVMValueRef instruction) {
         labels.insert(pair<long, int>((long) instruction, labels.size()));
         fprintf(f, ",\"register\": \"var-%i\"", labels[(long) instruction]);
     }
+
+    if(opcode & LLVMCall) {
+        LLVMValueRef func = LLVMGetCalledValue(instruction);
+        // TODO: replace magic number length
+        size_t len = 42;
+        const char* funcname = LLVMGetValueName2(func, &len);
+        if (strstr(funcname, "get_location") ||
+            strstr(funcname, "get_IMEI") ||
+            strstr(funcname, "get_apple_ID")) {
+            fprintf(f, ",\"isTainted\": true");
+        } else {
+            fprintf(f, ",\"isTainted\": false");
+        }
+    } else {
+        fprintf(f, ",\"isTainted\": false");
+    }
+
     fprintf(f, ",\"operands\":");
     print_operand_info(f, instruction);
     fprintf(f, "}");
