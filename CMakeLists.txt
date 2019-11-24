@@ -17,13 +17,13 @@ list(APPEND CMAKE_MODULE_PATH ${LLVM_INSTALL_DIR}/lib/cmake/llvm)
 # include LLVM
 include(LLVMConfig)
 
-add_executable(taint-explosion llvm-iterator.c)
+add_executable(taint-explosion llvm-iterator.cpp)
 
 target_include_directories(taint-explosion PUBLIC ${LLVM_INCLUDE_DIRS})
 
 target_link_libraries(taint-explosion PUBLIC LLVMBitReader LLVMBitWriter)
 
 target_compile_options(taint-explosion PUBLIC
-  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror -std=gnu89 -Wimplicit-fallthrough>
-  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror -std=gnu99 -Wimplicit-fallthrough>
+  $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Werror -Wimplicit-fallthrough>
+  $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Werror -Wimplicit-fallthrough>
   $<$<C_COMPILER_ID:MSVC>:/Wall /WX /wd4514 /wd4710 /wd4820 -Wimplicit-fallthrough>)
