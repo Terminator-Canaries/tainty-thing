@@ -4,12 +4,12 @@ parsing.py
 Defines functions that parse a RISC-V binary.
 """
 
-from instruction import RiscvInstr 
+from instruction import RiscvInstr
 
 
 # Split out program blocks given a single binary.
 def extractBlocks(riscv_file):
-	blocks = dict()
+    blocks = dict()
 
     with open(riscv_file, 'r') as file:
         content = file.readlines()
@@ -31,7 +31,7 @@ def extractBlocks(riscv_file):
         block_end = label_indices[i+1]
         blocks[content[idx]] = content[block_start:block_end]
 
-  	# Last block is a special case.
+    # Last block is a special case.
     last_block_label = label_indices[-1]
     blocks[content[last_block_label]] = content[last_block_label+1:]
 
@@ -42,20 +42,20 @@ def extractBlocks(riscv_file):
             if instr[0] == '\t':
                cleaned_insns.append(instr[1:])
             else:
-                raise Exception("instruction doesn't begin with a tab") 
+                raise Exception("instruction doesn't begin with a tab")
         blocks[key] = cleaned_insns
 
     for key in blocks.keys():
-    	# Log for debugging.
+        # Log for debugging.
         print("Block: ", key)
         cleanInstructions(blocks, key)
 
 
 # Parse out instruction opcode and args given single block.
-def cleanInstructions(blocks, block_label)
-	instructions = blocks[block_label]
-	for instr in instructions:
-        tokens = instr.replace('\t',' ').replace(',','').split(' ')
+def cleanInstructions(blocks, block_label):
+    instructions = blocks[block_label]
+    for instr in instructions:
+        tokens = instr.replace('\t', ' ').replace(',', '').split(' ')
         # Log for debugging.
         print(tokens)
         instr = RiscvInstr(tokens)

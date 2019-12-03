@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from executions import *
+import sys
+from execution import *
 from instruction import *
 from parsing import *
 from state import RiscvState
@@ -31,7 +32,7 @@ class RiscvInterpreter():
     def printState():
         for key in self.state.keys():
             val = self.state[key]
-            print("Register ", key, " contains value ", val.getValue(), " with taint ", 
+            print("Register ", key, " contains value ", val.getValue(), " with taint ",
                 getTaintAsString(val.getTaint()))
 
     # Update single register or memory location.
@@ -42,7 +43,7 @@ class RiscvInterpreter():
             state.setMemory(arg.mem_location, update_val)
         else:
             raise Exception("saw non-register and non-memory instruction argument")
-    
+
     # Execute instruction if supported, otherwise interpreter fails.
     def runOne(state, instr):
         opcode = instr.opcode
@@ -53,10 +54,10 @@ class RiscvInterpreter():
             updateState(instr.args[0])
         elif opcode == "beq":
             if execute_beq(args):
-                break
+                pass
         elif opcode == "bne":
             if execute_bne(args):
-                break
+                pass
         elif opcode == "call":
             call_func = args[0]
             # TODO: call function
@@ -64,7 +65,6 @@ class RiscvInterpreter():
             jump_target = args[0]
             jump_block = blocks[jump_target]
             self.current_block = jump_block
-            break
         elif opcode == "lui":
             update_val = execute_lui(args)
             updateState(instr.args[0])
@@ -73,6 +73,7 @@ class RiscvInterpreter():
             updateState(instr.args[0])
         elif opcode == "sw":
             # TODO: figure out how to reverse 'lw'
+            pass
         else:
             raise Exception("unsupported instruction: {}".format(opcode))
             sys.exit(1)
@@ -109,10 +110,11 @@ def main():
 
     interpreter = RiscvInterpreter(STACK_SIZE, MEM_SIZE, riscv_file, pickle_jar)
     policy = TaintPolicy()
-    
+
     # Interpreter loop.
     while(interpreter.runWrapper(policy)):
         # TODO: logging
+        pass
 
     return state.getRegister('ra')
 

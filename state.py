@@ -65,10 +65,11 @@ class RiscvState():
         self.memory  = [0 for i in range(mem_size)]
         # To keep track of taint for each byte in memory.
         self.shadow_memory = [0 for i in range(mem_size)]
-        
+
         # Initialize the stack pointer to the end of memory.
-        self.register('sp') = mem_size
-        self.register('pc') = entry_point    
+        self.setRegister(2, mem_size)
+        # Set the program counter to the first instruction.
+        self.setRegister(32, entry_point)
 
     def getArgVal(arg):
         if arg.type == ARG_REGISTER:
@@ -89,7 +90,7 @@ class RiscvState():
         if idx >= 0 and idx <= 32:
             self.registers[idx] = val
         else:
-            raise Exception("attempt to write to invalid register")        
+            raise Exception("attempt to write to invalid register")
 
     def getMemory(location):
         if location < 0 or location > self.MEM_SIZE:

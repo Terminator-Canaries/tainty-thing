@@ -5,7 +5,6 @@ Defines object representations necessary to track and propagate taint.
 """
 
 from instruction import RiscvInstr
-import typing
 
 # Taint Flags
 # If flags change, edit function getTaintAsString().
@@ -58,16 +57,17 @@ class TaintPolicy():
         self.taint_level = 0
         self.num_tainted_instructions_run = 0
         self.time_in_taint_mode = 0
-        
+
         # As opposed to check mode which is regular execution.
         self.is_taint_mode = False
-        
+
         # Taint policy should be an abstraction.
         self._policy = instruction_policy
 
     # True iff tokens are tainted.
     def taintedArgs(instr):
         # TODO: implement taint checking
+        pass
 
     # Update taint state according to instruction and current policy.
     def propagateTaint(instr):
