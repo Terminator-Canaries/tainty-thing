@@ -40,7 +40,7 @@ def extractBlocks(riscv_file):
         cleaned_insns = []
         for instr in blocks[key]:
             if instr[0] == '\t':
-               cleaned_insns.append(instr[1:])
+                cleaned_insns.append(instr[1:])
             else:
                 raise Exception("instruction doesn't begin with a tab")
         blocks[key] = cleaned_insns

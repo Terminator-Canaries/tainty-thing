@@ -4,8 +4,6 @@ instruction.py
 Defines object representations necessary to track and propagate taint.
 """
 
-from instruction import RiscvInstr
-
 # Taint Flags
 # If flags change, edit function getTaintAsString().
 TAINT_LOC = 0x1
@@ -14,6 +12,7 @@ TAINT_NAME = 0x100
 TAINT_FACE = 0x1000
 TAINT_PASSWORD = 0x10000
 TAINT_OTHER = 0x100000
+
 
 # Captures values and their taint.
 class ValueTaint():
@@ -65,11 +64,11 @@ class TaintPolicy():
         self._policy = instruction_policy
 
     # True iff tokens are tainted.
-    def taintedArgs(instr):
+    def taintedArgs(self, instr):
         # TODO: implement taint checking
         pass
 
     # Update taint state according to instruction and current policy.
-    def propagateTaint(instr):
+    def propagateTaint(self, instr):
         self.num_tainted_instructions_run += 1
         # TODO: implement taint propagation

@@ -5,11 +5,7 @@ Defines an object representation for interpreter state.
 Includes registers for 32-bit RISC-V, raw memory, and stack memory.
 """
 
-from instruction import *
-
-
 ABI_TO_REGISTER_IDX = {
-        'Zero': 0,
         'zero': 0,
         'ra': 1,
         'sp': 2,
@@ -46,11 +42,14 @@ ABI_TO_REGISTER_IDX = {
         'pc': 32
 }
 
-def isValidRegister(name):
-    if token in ABI_TO_REGISTER_IDX:
-        return ABI_TO_REGISTER_IDX[token]
+
+def isValidRegister(register):
+    register = register.lower()
+    if register in ABI_TO_REGISTER_IDX:
+        return ABI_TO_REGISTER_IDX[register]
     else:
         return None
+
 
 class RiscvState():
     def __init__(self, mem_size, stack_size, entry_point):
@@ -62,7 +61,7 @@ class RiscvState():
         self.STACK_SIZE = stack_size
         self.MEM_SIZE = mem_size
 
-        self.memory  = [0 for i in range(mem_size)]
+        self.memory = [0 for i in range(mem_size)]
         # To keep track of taint for each byte in memory.
         self.shadow_memory = [0 for i in range(mem_size)]
 
@@ -71,7 +70,7 @@ class RiscvState():
         # Set the program counter to the first instruction.
         self.setRegister(32, entry_point)
 
-    def getArgVal(arg):
+    def getArgVal(self, arg):
         if arg.type == ARG_REGISTER:
             return getRegister(arg.register_idx)
         elif arg.type == ARG_MEMORY:
@@ -79,26 +78,26 @@ class RiscvState():
         else:
             return arg.token
 
-    def getRegister(idx):
+    def getRegister(self, idx):
         if idx >= 0 and idx <= 32:
-            return self.registers[register_idx]
+            return self.registers[idx]
         else:
             raise Exception("attempt to read invalid register")
             return None
 
-    def setRegister(idx, val):
+    def setRegister(self, idx, val):
         if idx >= 0 and idx <= 32:
             self.registers[idx] = val
         else:
             raise Exception("attempt to write to invalid register")
 
-    def getMemory(location):
+    def getMemory(self, location):
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("memory read out of bounds")
             return None
         return self.memory[location]
 
-    def setMemory(location, val):
+    def setMemory(self, location, val):
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("memory write out of bounds")
         self.memory[location] = val

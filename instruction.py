@@ -4,7 +4,7 @@ instruction.py
 Defines an object representation for RISC-V instructions.
 """
 
-from state import *
+from state import isValidRegister, ABI_TO_REGISTER_IDX
 
 
 ARG_REGISTER = 1
@@ -29,7 +29,7 @@ class RiscvArg():
             if isValidRegister(base):
                 self.mem_location = offset + base
 
-    def printArg():
+    def printArg(self):
         print(self.token)
 
 
@@ -43,5 +43,5 @@ class RiscvInstr():
         for arg in self.args:
             arg = RiscvArg(arg)
 
-    def printInstr():
+    def printInstr(self):
         print(self.tokens)

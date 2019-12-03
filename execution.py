@@ -1,5 +1,5 @@
 """
-executions.py
+execution.py
 
 Defines functions that execute most common RISC instructions.
 To support a new instruction add its corresponding function here.
@@ -47,6 +47,7 @@ def execute_bne(args):
 # call    arg0
 def execute_call(args):
     return args[0]
+
 
 # j    arg0
 def execute_j(args):

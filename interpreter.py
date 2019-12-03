@@ -3,7 +3,7 @@
 import sys
 from execution import *
 from instruction import *
-from parsing import *
+from parsing import extractBlocks
 from state import RiscvState
 from taint import ValueTaint, TaintPolicy
 
@@ -29,7 +29,7 @@ class RiscvInterpreter():
         # Need to add instruction policy argument.
         self.taint_policy = TaintPolicy(mem_size, None)
 
-    def printState():
+    def printState(self):
         for key in self.state.keys():
             val = self.state[key]
             print("Register ", key, " contains value ", val.getValue(), " with taint ",
@@ -38,14 +38,16 @@ class RiscvInterpreter():
     # Update single register or memory location.
     def updateState(arg, update_val):
         if arg.type == ARG_REGISTER:
-            state.setRegister(arg.register_idx, update_val)
+            self.state.setRegister(arg.register_idx, update_val)
         elif arg.type == ARG_MEMORY:
-            state.setMemory(arg.mem_location, update_val)
+            self.state.setMemory(arg.mem_location, update_val)
         else:
-            raise Exception("saw non-register and non-memory instruction argument")
+            raise Exception(
+                "saw non-register and non-memory instruction argument"
+            )
 
     # Execute instruction if supported, otherwise interpreter fails.
-    def runOne(state, instr):
+    def runOne(self, state, instr):
         opcode = instr.opcode
         args = [state.getArgVal(arg) for arg in instr.args]
 

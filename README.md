@@ -2,31 +2,31 @@
 
 ## Setup on OSX
 
-#### Install llvm
+Install llvm
 
-`brew install llvm`
+    brew install llvm
 
-#### Add `/usr/local/opt/llvm/bin/` to your path
+Add `/usr/local/opt/llvm/bin/` to your path
 
-`echo 'export PATH="/usr/local/opt/llvm/bin:$PATH"' >> ~/.bash_profile`
+    echo 'export PATH="/usr/local/opt/llvm/bin:$PATH"' >> ~/.bash_profile
 
-`source ~/.bash_profile`
+    source ~/.bash_profile
+
+## Run the interpreter
 
 #### Generate a RISCV file
 
-You must have llvm installed. You may need to create an alias for opt/llc.
+Generate LLVM bytecode `.bc`:   
 
-Generate LLVM bytecode `.bc`:
+    clang -c -emit-llvm program.c -o program.bc
 
-`clang -c -emit-llvm program.c -o program.bc`
+Generate a `.s` file:  
 
-Generate a `.s` file:
-
-`llc -regalloc=basic -march=riscv32 program.bc`
+    llc -regalloc=basic -march=riscv32 program.bc
 
 #### Run the interpreter
 
-`python interpreter.py riscv_file pickle_jar program_args`
+    python interpreter.py riscv_file pickle_jar program_args
 
 ## Files
 
