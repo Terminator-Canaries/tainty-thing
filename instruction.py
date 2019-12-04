@@ -6,18 +6,18 @@ Defines an object representation for RISC-V instructions.
 
 from state import is_valid_register, ABI_TO_REGISTER_IDX
 
-
+# Argument types
 ARG_REGISTER = 1
 ARG_MEMORY = 2
-ARG_OTHER = 3
+ARG_CONSTANT = 3
 
 
 class RiscvArg():
     """
     Represents an abstract righthand side argument.
     """
-    def __init__(self, token):
-        self.token = token
+    def __init__(self, arg):
+        self.token = arg
 
         if is_valid_register(self.token):
             self.type = ARG_REGISTER
@@ -33,6 +33,12 @@ class RiscvArg():
 
     def print_arg(self):
         print(self.token)
+
+    def is_register(self):
+        return self.type == ARG_REGISTER
+
+    def is_memory(self):
+        return self.type == ARG_MEMORY
 
 
 class RiscvInstr():

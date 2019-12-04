@@ -13,8 +13,8 @@ STACK_SIZE = 128
 
 
 class RiscvInterpreter():
-    def __init__(self, mem_size, stack_size, riscv_file, pickle_jar):
-        self.state = RiscvState(mem_size, stack_size, entry_point)
+    def __init__(self, mem_size, stack_size, riscv_file, pickle_jar=None):
+        self.state = RiscvState(mem_size, stack_size)
 
         # Parsed representation of RISC-V assembly program blocks.
         self.blocks = extractBlocks(riscv_file)
@@ -36,10 +36,10 @@ class RiscvInterpreter():
                 get_taint_as_string(val.get_taint()))
 
     # Update single register or memory location.
-    def update_state(arg, update_val):
-        if arg.type == ARG_REGISTER:
+    def update_state(self, arg, update_val):
+        if arg.is_register():
             self.state.set_register(arg.register_idx, update_val)
-        elif arg.type == ARG_MEMORY:
+        elif arg.is_memory():
             self.state.set_memory(arg.mem_location, update_val)
         else:
             raise Exception(
@@ -99,18 +99,23 @@ class RiscvInterpreter():
 
 
 def main():
-    if len(sys.argv) < 3:
-        print('Usage:', sys.argv[0], '<riscv_file>', '<pickle_jar>', '<program_args>')
+    min_args = 2
+    if len(sys.argv) < min_args:
+        # TODO: add in pickling
+        print('Usage: {} <riscv_file> <program_args>'
+              .format(sys.argv[0]))
         sys.exit(1)
 
     riscv_file = sys.argv[1]
-    pickle_jar = sys.argv[2]
+    
+    # TODO: handle arguments
+    # program_args = sys.argv[min_args:]
+
     # TODO: implement as input file
-    args = sys.argv[3:]
 
     # TODO: pickling
 
-    interpreter = RiscvInterpreter(STACK_SIZE, MEM_SIZE, riscv_file, pickle_jar)
+    interpreter = RiscvInterpreter(STACK_SIZE, MEM_SIZE, riscv_file)
     policy = TaintPolicy()
 
     # Interpreter loop.

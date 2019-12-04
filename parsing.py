@@ -57,5 +57,5 @@ def cleanInstructions(blocks, block_label):
     for instr in instructions:
         tokens = instr.replace('\t', ' ').replace(',', '').split(' ')
         # Log for debugging.
-        print(tokens)
+        print("Tokens: ", tokens)
         instr = RiscvInstr(tokens)

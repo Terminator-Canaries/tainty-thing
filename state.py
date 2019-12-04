@@ -5,8 +5,6 @@ Defines an object representation for interpreter state.
 Includes registers for 32-bit RISC-V, raw memory, and stack memory.
 """
 
-from instruction import ARG_MEMORY, ARG_REGISTER
-
 ABI_TO_REGISTER_IDX = {
         'zero': 0,
         'ra': 1,
@@ -54,7 +52,7 @@ def is_valid_register(register):
 
 
 class RiscvState():
-    def __init__(self, mem_size, stack_size, entry_point):
+    def __init__(self, mem_size, stack_size, entry_point=0):
         # Need 32 registers + the program counter.
         self.registers = [0 for i in range(33)]
         # To keep track of taint for each register.
@@ -73,10 +71,10 @@ class RiscvState():
         self.set_register(32, entry_point)
 
     def get_arg_val(self, arg):
-        if arg.type == ARG_REGISTER:
-            return get_register(arg.register_idx)
-        elif arg.type == ARG_MEMORY:
-            return get_memory(arg.mem_location)
+        if arg.is_register():
+            return self.get_register(arg.register_idx)
+        elif arg.is_memory():
+            return self.get_memory(arg.mem_location)
         else:
             return arg.token
 
@@ -85,7 +83,6 @@ class RiscvState():
             return self.registers[idx]
         else:
             raise Exception("attempt to read invalid register")
-            return None
 
     def set_register(self, idx, val):
         if idx >= 0 and idx <= 32:
@@ -96,7 +93,6 @@ class RiscvState():
     def get_memory(self, location):
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("memory read out of bounds")
-            return None
         return self.memory[location]
 
     def set_memory(self, location, val):
