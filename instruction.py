@@ -9,7 +9,7 @@ from state import is_valid_register, ABI_TO_REGISTER_IDX
 ARG_REGISTER = 1
 ARG_MEMORY = 2
 ARG_CONSTANT = 3
-
+ARG_OTHER = 4
 
 class RiscvArg():
     """
