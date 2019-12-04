@@ -14,13 +14,12 @@ STACK_SIZE = 128
 
 class RiscvInterpreter():
     """
-    Simulates execution of a RISC-V binary on a 32-bit machine.
+    Simulates execution of a RISC-V binary.
     """
     def __init__(self, mem_size, stack_size, parsed_content, block_labels_to_lines):
         self.state = RiscvState(mem_size, stack_size)
         self.parsed_content = parsed_content
         self.block_labels_to_lines = block_labels_to_lines
-
 
         # Snapshots of state created for each instruction.
         self.pickles = []
@@ -35,7 +34,7 @@ class RiscvInterpreter():
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
 
-    # Execute the instruction pointed to by the program counter.
+    # Execute whichever instruction is pointed to by the program counter.
     def run(self, policy):
         # Simulate program counter.
         instr = self.blocks[self.current_block][self.current_line]
