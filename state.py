@@ -111,12 +111,7 @@ class RiscvState():
         else:
             return arg.token
 
-    def is_valid_register(register):
-        register = register.lower()
-        if register in ABI_TO_REGISTER_IDX:
-            return ABI_TO_REGISTER_IDX[register]
-        else:
-            return None
+    
 
     def get_register(self, idx):
         if idx >= 0 and idx <= 32:
