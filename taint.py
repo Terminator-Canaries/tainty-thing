@@ -34,7 +34,7 @@ class ValueTaint():
     def remove_taint(self, taint):
         self.taint ^= taint
 
-    def print_taint(taint):
+    def print_taint(self, taint):
         taint_string = ""
         if (taint & TAINT_LOC):
             taint_string += "|TAINT_LOC"
@@ -53,10 +53,11 @@ class ValueTaint():
 
 # Defines rules for taint propagation.
 class TaintPolicy():
-    def __init__(self, instruction_policy):
+    def __init__(self):
         # Keep track of taint stats.
         self.taint_level = 0
-        self.num_tainted_instructions_run = 0
+        self.num_total_instr_run = 0
+        self.num_tainted_instr_run = 0
         self.time_in_taint_mode = 0
 
     # True iff tokens are tainted.

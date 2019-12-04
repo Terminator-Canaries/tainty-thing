@@ -18,6 +18,8 @@ class RiscvInterpreter():
     """
     def __init__(self, mem_size, stack_size, parsed_content, block_labels_to_lines):
         self.state = RiscvState(mem_size, stack_size)
+        self.current_block = None
+
         self.parsed_content = parsed_content
         self.block_labels_to_lines = block_labels_to_lines
 
@@ -26,22 +28,27 @@ class RiscvInterpreter():
         self.pickle_count = 0
 
         # Need to add instruction policy argument.
-        self.taint_policy = TaintPolicy(mem_size, None)
+        self.taint_policy = TaintPolicy()
 
-    # Execute instruction if supported, otherwise interpreter fails.
     def run_one(self, state, instr):
-        if not instr.execute(state):
+        result = instr.execute(self.state, self.block_labels_to_lines)
+        # Just executed a jump instruction.
+        if result and result != 1:
+            self.current_block = result
+            return True
+        # Just executed a return.
+        elif result == 0:
+            # Want to return false to stop execution.
+            return not (self.current_block == "main:")
+        elif not result:
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
+        else:
+            return True
 
-    # Execute whichever instruction is pointed to by the program counter.
-    def run(self, policy):
-        # Simulate program counter.
-        instr = self.blocks[self.current_block][self.current_line]
-        # If taint found, check policies and switch to executing in taint mode.
-        if policy.tainted_args(instr):
-            policy.propagate(instr)
-            # TODO: switch modes
+    def run(self):
+        pc = self.state.get_register(32)
+        instr = self.parsed_content[pc]
         return self.run_one(self.state, instr)
 
 
@@ -62,17 +69,17 @@ def main():
     block_labels_to_lines = parser.extract_blocks()
     parsed_content = parser.parse_lines()
 
-    interpreter = RiscvInterpreter(STACK_SIZE, MEM_SIZE, riscv_file, block_labels_to_lines, parsed_content)
+    interpreter = RiscvInterpreter(STACK_SIZE, MEM_SIZE, parsed_content, block_labels_to_lines)
 
     # TODO: add instruction_policy
-    policy = TaintPolicy(None)
+    policy = TaintPolicy()
 
-    # Interpreter loop.
-    while(interpreter.run_wrapper(policy)):
-        # TODO: logging
-        pass
+    # Interpreter loop with taint tracking.
+    while(interpreter.run()):
+        policy.num_total_instr_run += 1
 
-    return interpreter.state.get_arg_value('ra')
+    # Return value stored in 'ra'.
+    return interpreter.state.get_register(1)
 
 
 if __name__ == '__main__':
