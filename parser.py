@@ -12,12 +12,11 @@ class RiscvParser():
     """
     def __init__(self, bin_file):
         with open(bin_file, 'r') as file:
-            content = file.readlines()
-        content = [line.strip("\n") for line in content]
-
-        # Throw away header and footer.
-        header_len, footer_len = 7, 13
-        self.content = content[header_len:len(content)-footer_len]
+            self.content = []
+            for line in file.readlines():
+                line = line.strip("\n")
+                if line:
+                    self.content.append(line)
 
     def print_content(self):
         print("RISC-V BINARY:")
@@ -31,12 +30,12 @@ class RiscvParser():
 
         for idx, line in enumerate(self.content):
             # Seeing ':' indicates delimiter between block labels and blocks.
-            if line[-1] == ":":
+            if line and line[-1] == ":":
                 label_indices.append(idx)
 
         for idx in label_indices:
             block_label = self.content[idx]
-            self.block_labels_to_lines[block_label] = idx
+            block_labels_to_lines[block_label] = idx
 
         return block_labels_to_lines
 
@@ -44,7 +43,17 @@ class RiscvParser():
         parsed_content = []
 
         for line in self.content:
-            line.strip('\n').strip('\t')
+            line.strip()
+            print("line: ", line)
+
+            # Skip lines until first block reached.
+            if line[0] == ".":
+                continue
+
+            # Ignore CFI directives and LLVM comments.
+            if line[0:3] == ".cfi" or line[0] == "#":
+                continue
+
             # Don't convert block labels to instruction objects.
             if line[-1] != ":":
                 line.replace('\t', ' ')
