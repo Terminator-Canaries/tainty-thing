@@ -27,10 +27,10 @@ class ValueTaint():
         return self.taint
 
     def add_taint(self, taint):
-        self.taint = self.taint | taint
+        self.taint |= taint
 
     def remove_taint(self, taint):
-        self.taint = self.taint | (~taint)
+        self.taint ^= taint
 
     def print_taint_as_string(taint):
         taint_string = ""
