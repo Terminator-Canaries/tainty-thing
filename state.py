@@ -1,8 +1,6 @@
 """
 state.py
 
-Defines an object representation for interpreter state.
-Includes registers for 32-bit RISC-V, raw memory, and stack memory.
 """
 
 ABI_TO_REGISTER_IDX = {
@@ -43,16 +41,11 @@ ABI_TO_REGISTER_IDX = {
 }
 
 
-def is_valid_register(register):
-    register = register.lower()
-    if register in ABI_TO_REGISTER_IDX:
-        return ABI_TO_REGISTER_IDX[register]
-    else:
-        return None
-
-
 class RiscvState():
-    def __init__(self, mem_size, stack_size, entry_point=0):
+    """
+    Represents interpreter state on a 32-bit machine.
+    """
+    def __init__(self, mem_size, stack_size):
         # Need 32 registers + the program counter.
         self.registers = [0 for i in range(33)]
         # To keep track of taint for each register.
@@ -68,7 +61,27 @@ class RiscvState():
         # Initialize the stack pointer to the end of memory.
         self.set_register(2, mem_size)
         # Set the program counter to the first instruction.
-        self.set_register(32, entry_point)
+        self.set_register(32, 0)
+
+    def print(self):
+        # Print register contents.
+        for register, idx in ABI_TO_REGISTER_IDX.items():
+            val = self.registers[idx]
+            print("Register ", register, " contains value ", val.get_value(),
+                  " with taint ", val.print_taint())
+        # Print memory contents.
+        for idx, val in enumerate(self.memory):
+            print("Memory at location ", idx, " contains value ", val.get_value(),
+                  " with taint ", val.print_taint())
+
+    # Update single register or memory location.
+    def update(self, arg, update_val):
+        if arg.is_register():
+            self.state.set_register(arg.register_idx, update_val)
+        elif arg.is_memory():
+            self.state.set_memory(arg.mem_location, update_val)
+        else:
+            raise Exception("saw non-register and non-memory instruction argument")
 
     def get_arg_val(self, arg):
         if arg.is_register():
@@ -77,6 +90,13 @@ class RiscvState():
             return self.get_memory(arg.mem_location)
         else:
             return arg.token
+
+    def is_valid_register(register):
+        register = register.lower()
+        if register in ABI_TO_REGISTER_IDX:
+            return ABI_TO_REGISTER_IDX[register]
+        else:
+            return None
 
     def get_register(self, idx):
         if idx >= 0 and idx <= 32:
