@@ -29,7 +29,7 @@ class RiscvParser():
         block_labels_to_lines = dict()
         label_indices = []
 
-        for line, idx in enumerate(self.content):
+        for idx, line in enumerate(self.content):
             # Seeing ':' indicates delimiter between block labels and blocks.
             if line[-1] == ":":
                 label_indices.append(idx)

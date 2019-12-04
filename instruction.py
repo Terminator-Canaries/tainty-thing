@@ -3,13 +3,12 @@ instruction.py
 
 """
 
+import re
 from state import ABI_TO_REGISTER_IDX
 
 ARG_REGISTER = 1
 ARG_MEMORY = 2
 ARG_CONSTANT = 3
-ARG_OTHER = 4
-
 
 class RiscvArg():
     """
@@ -22,29 +21,37 @@ class RiscvArg():
             self.type = ARG_REGISTER
             self.register_name = self.token
             self.register_idx = ABI_TO_REGISTER_IDX[self.token]
-        else:
+        elif self.is_memory_ref(self.token):
             self.type = ARG_MEMORY
-            # Parse token of the form '-offset(base)'
+            # Parse token of the form 'offset(base)'
             offset = self.token.split('(')[0]
             base = self.token.split('(')[1].strip(')').lower()
             if self.is_valid_register(base):
                 self.mem_location = offset + base
+        else:
+            self.type = ARG_CONSTANT
 
     def print(self):
         print(self.token)
 
-    def is_valid_register(register):
-        register = register.lower()
-        if register in ABI_TO_REGISTER_IDX:
-            return ABI_TO_REGISTER_IDX[register]
+    def is_valid_register(token):
+        token = token.lower()
+        if token in ABI_TO_REGISTER_IDX:
+            return ABI_TO_REGISTER_IDX[token]
         else:
             return None
+
+    def is_memory_ref(memory):
+        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', memory)
 
     def is_register(self):
         return self.type == ARG_REGISTER
 
     def is_memory(self):
         return self.type == ARG_MEMORY
+
+    def is_constant(self):
+        return self.type == ARG_CONSTANT
 
 
 class RiscvInstr():
@@ -129,7 +136,7 @@ class RiscvInstr():
         elif self.opcode == "bne":
             self.execute_bne(state, block_labels_to_lines)
         elif self.opcode == "call":
-            # TODO: call function
+            # TODO: simulate calling function
             pass
         elif self.opcode == "j":
             self.execute_j(self, state, block_labels_to_lines)
