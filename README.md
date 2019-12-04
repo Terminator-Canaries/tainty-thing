@@ -6,23 +6,19 @@ Install llvm
 
     brew install llvm
 
-Add `/usr/local/opt/llvm/bin/` to your path
-
-    echo 'export PATH="/usr/local/opt/llvm/bin:$PATH"' >> ~/.bash_profile
-
-    source ~/.bash_profile
-
 ## Run the interpreter
 
 #### Generate a RISCV file
 
-Generate LLVM bytecode `.bc`:   
+    sh gen_riscv.sh file.c
 
-    clang -c -emit-llvm program.c -o program.bc
 
-Generate a `.s` file:  
+If you get the error "llc: command not found" on OSX,
+you can probably fix it by adding `/usr/local/opt/llvm/bin/` to your path:
 
-    llc -regalloc=basic -march=riscv32 program.bc
+        echo 'export PATH="/usr/local/opt/llvm/bin:$PATH"' >> ~/.bash_profile
+
+        source ~/.bash_profile
 
 #### Run the interpreter
 
@@ -52,7 +48,7 @@ Holds registers and memory. Converts instructions in blocks dictionary into inst
 * ABI_TO_REGISTER_IDX
 * is_valid_register
 * class RiscvState
-	
+
 `execution.py`
 
 Defines functions that execute most common RISC instructions.
