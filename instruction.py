@@ -3,13 +3,13 @@ instruction.py
 
 """
 
-from state import is_valid_register, ABI_TO_REGISTER_IDX
+from state import ABI_TO_REGISTER_IDX
 
-# Argument types
 ARG_REGISTER = 1
 ARG_MEMORY = 2
 ARG_CONSTANT = 3
 ARG_OTHER = 4
+
 
 class RiscvArg():
     """
@@ -18,7 +18,7 @@ class RiscvArg():
     def __init__(self, arg):
         self.token = arg
 
-        if is_valid_register(self.token):
+        if self.is_valid_register(self.token):
             self.type = ARG_REGISTER
             self.register_name = self.token
             self.register_idx = ABI_TO_REGISTER_IDX[self.token]
@@ -27,11 +27,18 @@ class RiscvArg():
             # Parse token of the form '-offset(base)'
             offset = self.token.split('(')[0]
             base = self.token.split('(')[1].strip(')').lower()
-            if is_valid_register(base):
+            if self.is_valid_register(base):
                 self.mem_location = offset + base
 
     def print(self):
         print(self.token)
+
+    def is_valid_register(register):
+        register = register.lower()
+        if register in ABI_TO_REGISTER_IDX:
+            return ABI_TO_REGISTER_IDX[register]
+        else:
+            return None
 
     def is_register(self):
         return self.type == ARG_REGISTER
@@ -57,47 +64,80 @@ class RiscvInstr():
         print(self.tokens)
 
     # addi    arg0, arg1, arg2
+    # arg0 = arg1 + sext(arg2)
     def execute_addi(self, state):
         # Technically arg2 is sign extended but doesn't matter in Python.
         arg0 = state.get_arg_val(self.args[1]) + state.get_arg_val(self.args[2])
-        state.update_val(args[0], arg0)
+        state.update_val(self.args[0].mem_location, arg0)
+
+    # beq    arg0, arg1, arg2
+    # jump to arg2 if arg0 == arg1
+    def execute_beq(self, state, block_labels_to_lines):
+        arg0 = state.get_arg_val(self.args[0])
+        if block_labels_to_lines[arg0]:
+            pc = block_labels_to_lines[arg0]
+        else:
+            pc = arg0
+        if state.get_arg_val(self.args[0]) == state.get_arg_val(self.args[1]):
+            state.set_register(32, pc)
+
+    # bne    arg0, arg1, arg2
+    # jump to arg2 if arg0 != arg1
+    def execute_bne(self, state, block_labels_to_lines):
+        arg0 = state.get_arg_val(self.args[0])
+        if block_labels_to_lines[arg0]:
+            pc = block_labels_to_lines[arg0]
+        else:
+            pc = arg0
+        if state.get_arg_val(self.args[0]) != state.get_arg_val(self.args[1]):
+            state.set_register(32, pc)
+
+    # j    arg0
+    # jump to arg0
+    def execute_j(self, state, block_labels_to_lines):
+        arg0 = state.get_arg_val(self.args[0])
+        if block_labels_to_lines[arg0]:
+            pc = block_labels_to_lines[arg0]
+        else:
+            pc = arg0
+        state.set_register(32, pc)
 
     # lui    arg0, arg1
+    # arg0 = arg1 << 12
     def execute_lui(self, state):
-        arg0 = state.get_arg_val(args[1]) << 12
-        state.update_val(args[0], arg0)
+        arg0 = state.get_arg_val(self.args[1]) << 12
+        state.update_val(self.args[0].mem_location, arg0)
 
     # lw    arg0, arg1(arg2)
+    # arg0 = arg2 + arg1
     def execute_lw(self, state):
-        return args[1] + sext(args[2])
+        arg0 = state.get_arg_val(self.args[2]) + state.get_arg_val(self.args[1])
+        state.update_val(self.args[0].mem_location, arg0)
 
     # sw    arg0, arg1(arg2)
+    # arg2 + arg1 = arg0
     def execute_sw(self, state):
-        return args[0]
+        mem_location = state.get_arg_val(self.args[2]) + state.get_arg_val(self.args[1])
+        arg0 = state.get_arg_val(self.args[0])
+        state.update_val(mem_location, arg0)
 
-    def execute(self, state):
+    def execute(self, state, block_labels_to_lines):
         if self.opcode == "addi":
-            execute_addi(self.args)
+            self.execute_addi(state)
         elif self.opcode == "beq":
-            if execute_beq(args):
-
+            self.execute_beq(state, block_labels_to_lines)
         elif self.opcode == "bne":
-            if execute_bne(args):
-
+            self.execute_bne(state, block_labels_to_lines)
         elif self.opcode == "call":
-            call_func = args[0]
             # TODO: call function
+            pass
         elif self.opcode == "j":
-            jump_target = args[0]
-            jump_block = blocks[jump_target]
-            self.current_block = jump_block
+            self.execute_j(self, state, block_labels_to_lines)
         elif self.opcode == "lui":
-            self.execute_lui(self.args)
+            self.execute_lui(state)
         elif self.opcode == "lw":
-            update_val = execute_lw(args)
-            update_state(instr.args[0])
+            self.execute_lw(state)
         elif self.opcode == "sw":
-            # TODO: figure out how to reverse 'lw'
+            self.execute_sw(state)
         else:
             return None
-

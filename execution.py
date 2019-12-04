@@ -11,11 +11,13 @@ by reference.
 
 
 # addi    arg0, arg1, arg2
+# arg0 = arg1 + sext(arg2)
 def execute_addi(args):
     return args[1] + sext(args[2])
 
 
 # lui    arg0, arg1
+# arg0 = arg1 << 12
 def execute_lui(args):
     return args[1] << 12
 
@@ -32,12 +34,12 @@ def execute_sw(args):
 
 # Conditional breaks
 
-# beq    arg0, arg1
+# beq    arg0, arg1, arg2
 def execute_beq(args):
     return args[0] == args[1]
 
 
-# bne    arg0, arg1
+# bne    arg0, arg1, arg2
 def execute_bne(args):
     return args[0] != args[1]
 
