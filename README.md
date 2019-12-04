@@ -42,11 +42,17 @@ Parses RISC binary.
 
 Interprets parsed RISC.
 
+* class RiscvInterpreter
+* main - handles arguments, sets up pickling, initializes interpreter, sets up policy
+
 `state.py`
 
-Holds registers and memory. Converts instructions in blocks dictionary
-into instruction objects.
+Holds registers and memory. Converts instructions in blocks dictionary into instruction objects.
 
+* ABI_TO_REGISTER_IDX
+* is_valid_register
+* class RiscvState
+	
 `execution.py`
 
 Defines functions that execute most common RISC instructions.
@@ -54,6 +60,9 @@ Defines functions that execute most common RISC instructions.
 `instruction.py`
 
 Defines an object representation for RISC-V instructions.
+
+* class RiscvArg
+* class RiscvInstr
 
 #### Tainting
 

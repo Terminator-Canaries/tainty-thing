@@ -5,7 +5,7 @@ Defines object representations necessary to track and propagate taint.
 """
 
 # Taint Flags
-# If flags change, edit function getTaintAsString().
+# If flags change, edit function get_taint_as_string().
 TAINT_LOC = 0x1
 TAINT_ID = 0x10
 TAINT_NAME = 0x100
@@ -20,19 +20,19 @@ class ValueTaint():
         self.value = value
         self.taint = taint
 
-    def getValue(self):
+    def get_value(self):
         return self.value
 
-    def getTaint(self):
+    def get_taint(self):
         return self.taint
 
-    def addTaint(self, taint):
+    def add_taint(self, taint):
         self.taint = self.taint | taint
 
-    def removeTaint(self, taint):
+    def remove_taint(self, taint):
         self.taint = self.taint | (~taint)
 
-    def printTaintAsString(taint):
+    def print_taint_as_string(taint):
         taint_string = ""
         if (taint & TAINT_LOC):
             taint_string += "|TAINT_LOC"
@@ -64,11 +64,11 @@ class TaintPolicy():
         self._policy = instruction_policy
 
     # True iff tokens are tainted.
-    def taintedArgs(self, instr):
+    def tainted_args(self, instr):
         # TODO: implement taint checking
         pass
 
     # Update taint state according to instruction and current policy.
-    def propagateTaint(self, instr):
+    def propagate_taint(self, instr):
         self.num_tainted_instructions_run += 1
         # TODO: implement taint propagation

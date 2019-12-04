@@ -29,31 +29,31 @@ class RiscvInterpreter():
         # Need to add instruction policy argument.
         self.taint_policy = TaintPolicy(mem_size, None)
 
-    def printState(self):
+    def print_state(self):
         for key in self.state.keys():
             val = self.state[key]
-            print("Register ", key, " contains value ", val.getValue(), " with taint ",
-                getTaintAsString(val.getTaint()))
+            print("Register ", key, " contains value ", val.get_value(), " with taint ",
+                get_taint_as_string(val.get_taint()))
 
     # Update single register or memory location.
-    def updateState(arg, update_val):
+    def update_state(arg, update_val):
         if arg.type == ARG_REGISTER:
-            self.state.setRegister(arg.register_idx, update_val)
+            self.state.set_register(arg.register_idx, update_val)
         elif arg.type == ARG_MEMORY:
-            self.state.setMemory(arg.mem_location, update_val)
+            self.state.set_memory(arg.mem_location, update_val)
         else:
             raise Exception(
                 "saw non-register and non-memory instruction argument"
             )
 
     # Execute instruction if supported, otherwise interpreter fails.
-    def runOne(self, state, instr):
+    def run_one(self, state, instr):
         opcode = instr.opcode
-        args = [state.getArgVal(arg) for arg in instr.args]
+        args = [state.get_arg_val(arg) for arg in instr.args]
 
         if opcode == "addi":
             update_val = execute_addi(args)
-            updateState(instr.args[0])
+            update_state(instr.args[0])
         elif opcode == "beq":
             if execute_beq(args):
                 pass
@@ -69,10 +69,10 @@ class RiscvInterpreter():
             self.current_block = jump_block
         elif opcode == "lui":
             update_val = execute_lui(args)
-            updateState(instr.args[0])
+            update_state(instr.args[0])
         elif opcode == "lw":
             update_val = execute_lw(args)
-            updateState(instr.args[0])
+            update_state(instr.args[0])
         elif opcode == "sw":
             # TODO: figure out how to reverse 'lw'
             pass
@@ -88,14 +88,14 @@ class RiscvInterpreter():
         return False
 
     # Execute the instruction pointed to by the program counter.
-    def runWrapper(self, policy):
+    def run_wrapper(self, policy):
         # Simulate program counter.
         instr = self.blocks[self.current_block][self.current_line]
         # If taint found, check policies and switch to executing in taint mode.
-        if policy.taintedArgs(instr):
+        if policy.tainted_args(instr):
             policy.propagate(instr)
             # TODO: switch modes
-        return self.runOne(state, instr)
+        return self.run_one(state, instr)
 
 
 def main():
@@ -114,11 +114,11 @@ def main():
     policy = TaintPolicy()
 
     # Interpreter loop.
-    while(interpreter.runWrapper(policy)):
+    while(interpreter.run_wrapper(policy)):
         # TODO: logging
         pass
 
-    return state.getRegister('ra')
+    return state.get_register('ra')
 
 
 if __name__ == '__main__':
