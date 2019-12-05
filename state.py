@@ -1,6 +1,5 @@
 """
 state.py
-
 """
 
 ABI_TO_REGISTER_IDX = {
@@ -45,7 +44,7 @@ class RiscvState():
     """
     Represents interpreter state on a 32-bit machine.
     """
-    def __init__(self, mem_size, stack_size, entry_point=0):
+    def __init__(self, mem_size, stack_size):
         # Need 32 registers + the program counter.
         self.registers = [0 for i in range(33)]
         # To keep track of taint for each register.
@@ -63,16 +62,16 @@ class RiscvState():
         # Set the program counter to the first instruction.
         self.set_register(32, 0)
 
-    def print(self):
+    def print_register_contents(self):
         # Print register contents.
         for register, idx in ABI_TO_REGISTER_IDX.items():
             val = self.registers[idx]
-            print("Register ", register, " contains value ", val.get_value(),
-                  " with taint ", val.print_taint())
+            print("Register {} contains value {} with taint {}"
+                  .format(register, val.get_value(), val.print_taint()))
         # Print memory contents.
         for idx, val in enumerate(self.memory):
-            print("Memory at location ", idx, " contains value ", val.get_value(),
-                  " with taint ", val.print_taint())
+            print("Memory at location {} contains value {} with taint {}"
+                  .format(idx, val.get_value(), val.print_taint()))
 
     # Update single register or memory location.
     def update(self, arg, update_val):
@@ -81,37 +80,20 @@ class RiscvState():
         elif arg.is_memory():
             self.state.set_memory(arg.mem_location, update_val)
         else:
-            raise Exception("saw non-register and non-memory instruction argument")
-
-    def print(self):
-        # Print register contents.
-        for register, idx in ABI_TO_REGISTER_IDX.items():
-            val = self.registers[idx]
-            print("Register ", register, " contains value ", val.get_value(),
-                  " with taint ", val.print_taint())
-        # Print memory contents.
-        for idx, val in enumerate(self.memory):
-            print("Memory at location ", idx, " contains value ", val.get_value(),
-                  " with taint ", val.print_taint())
-
-    # Update single register or memory location.
-    def update(self, arg, update_val):
-        if arg.is_register():
-            self.state.set_register(arg.register_idx, update_val)
-        elif arg.is_memory():
-            self.state.set_memory(arg.mem_location, update_val)
-        else:
-            raise Exception("saw non-register and non-memory instruction argument")
+            raise Exception("Instruction argument not registor or memory")
 
     def get_arg_val(self, arg):
+        """
+        Returns the integer value of the given argument.
+        """
+        print(type(arg))
         if arg.is_register():
             return self.get_register(arg.register_idx)
         elif arg.is_memory():
             return self.get_memory(arg.mem_location)
         else:
+            print("is something else!")
             return arg.token
-
-    
 
     def get_register(self, idx):
         if idx >= 0 and idx <= 32:

@@ -49,9 +49,7 @@ class RiscvParser():
                 self._instructions.append(self._line_to_instruction(line))
 
     def _line_to_instruction(self, line):
-        tokens = line.split()
-        for token in tokens:
-            token = token.replace(',', '')
+        tokens = [token.strip(',') for token in line.split()]
         return RiscvInstr(tokens)
 
     def print_content(self):

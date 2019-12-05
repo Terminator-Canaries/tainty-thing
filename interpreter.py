@@ -21,8 +21,8 @@ class RiscvInterpreter():
         self.current_block = None
 
         parser = RiscvParser(riscv_file)
-        self.parsed_content = parser.instructions()
-        self.block_labels_to_lines = parser.labels()
+        self._instructions = parser.instructions()
+        self.block_labels = parser.labels()
 
         # Snapshots of state created for each instruction.
         self.pickles = []
@@ -31,8 +31,11 @@ class RiscvInterpreter():
         # Need to add instruction policy argument.
         self.taint_policy = TaintPolicy()
 
-    def run_one(self, state, instr):
-        result = instr.execute(self.state, self.block_labels_to_lines)
+    def _run_one(self, state, instr):
+        """
+        Run a single instruction.
+        """
+        result = instr.execute(self.state, self.block_labels)
         # Just executed a jump instruction.
         if result and result != 1:
             self.current_block = result
@@ -49,8 +52,9 @@ class RiscvInterpreter():
 
     def run(self):
         pc = self.state.get_register(32)
-        instr = self.parsed_content[pc]
-        return self.run_one(self.state, instr)
+        instr = self._instructions[pc]
+        print("Run: ", instr.to_string())
+        return self._run_one(self.state, instr)
 
 
 def main():
