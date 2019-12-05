@@ -16,12 +16,13 @@ class RiscvInterpreter():
     """
     Simulates execution of a RISC-V binary.
     """
-    def __init__(self, mem_size, stack_size, parsed_content, block_labels_to_lines):
-        self.state = RiscvState(mem_size, stack_size)
+    def __init__(self, riscv_file):
+        self.state = RiscvState(MEM_SIZE, STACK_SIZE)
         self.current_block = None
 
-        self.parsed_content = parsed_content
-        self.block_labels_to_lines = block_labels_to_lines
+        parser = RiscvParser(riscv_file)
+        self.parsed_content = parser.instructions()
+        self.block_labels_to_lines = parser.labels()
 
         # Snapshots of state created for each instruction.
         self.pickles = []
@@ -65,11 +66,7 @@ def main():
 
     # TODO: pickling
 
-    parser = RiscvParser(riscv_file)
-    block_labels_to_lines = parser.extract_blocks()
-    parsed_content = parser.parse_lines()
-
-    interpreter = RiscvInterpreter(STACK_SIZE, MEM_SIZE, parsed_content, block_labels_to_lines)
+    interpreter = RiscvInterpreter(riscv_file)
 
     # TODO: add instruction_policy
     policy = TaintPolicy()
