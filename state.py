@@ -95,9 +95,11 @@ class RiscvState():
             return self.get_memory(mem_location)
         elif operand.is_constant():
             return operand.constant
+        elif operand.is_label():
+            raise Exception("Operand is a label. Use operand.get_target_name() instead.")
         else:
-            print("Operand is not register, memory reference, or constant")
-            return operand.token
+            raise Exception("Operand is not register, memory reference, or constant")
+
 
     def get_register(self, idx):
         if idx >= 0 and idx <= 32:

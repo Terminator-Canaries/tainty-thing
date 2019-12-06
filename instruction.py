@@ -12,6 +12,13 @@ OPERAND_CONSTANT = 3
 OPERAND_LABEL = 4
 OPERAND_CALL_FUNCTION = 5
 
+SUPPORTED_FUNCTIONS = {
+        'get_user_location': 0,
+        'get_uid': 1,
+        'get_password': 2,
+        'get_live_audio': 3
+}
+
 class InsufficientOperands(Exception):
     """
     Raise when execute_opcode called with insufficent operands.
@@ -48,7 +55,6 @@ class RiscvOperand():
     def __init__(self, token, block_labels):
         self._token = token
         self._offset = 0
-        self._supported_functions = ["get_user_location", "__mulsi3"]
 
         if self._token in ABI_TO_REGISTER_IDX:
             self._type = OPERAND_REGISTER
@@ -62,7 +68,7 @@ class RiscvOperand():
             self.mem_reference = MemoryReference(token)
         elif self.is_call_function():
             self.type = OPERAND_CALL_FUNCTION
-            self.constant = str(self._token)          
+            self.constant = str(self._token)
         else:
             self._type = OPERAND_CONSTANT
             self.constant = int(self._token)
@@ -76,7 +82,7 @@ class RiscvOperand():
 
     # Check if the token is a supported function.
     def is_call_function(self):
-        return self._token in self._supported_functions
+        return self._token in SUPPORTED_FUNCTIONS
 
     def is_register(self):
         return self._type == OPERAND_REGISTER
@@ -119,7 +125,6 @@ class RiscvInstr():
             pc = self._block_labels[target]
         # Jump target is a line number.
         else:
-            pc = target
             raise Exception("Jump target is not a block label")
         return pc
 
@@ -214,10 +219,6 @@ class RiscvInstr():
         ra = state.get_register(1)
         state.set_register(32, ra)
 
-        # TODO: update current_block and currenct_function
-
-
-
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
     def execute_sw(self, state):
@@ -226,6 +227,25 @@ class RiscvInstr():
         mem_reference = self.generate_mem_operand(self.operands[1], state)
         store_val = state.get_operand_val(self.operands[0])
         state.update_val(mem_reference, store_val)
+
+    # call   op0
+    # execute function op0
+    def execute_call(self, state):
+        if len(self.operands) < 1:
+            raise InsufficientOperands()
+        elif len(self.operands) != 1:
+            raise Exception("Function args not yet handled.")
+        
+        # Set the return address in 'ra' to 'pc'+1.
+        pc = state.get_register(32)
+        state.set_register(1, pc+1)
+
+        # Jump to the function name.
+        jump_val = (self.operands[0]).get_target_name()
+        pc = self.get_jump_target(jump_val)
+        state.set_register(32, pc)
+
+        return jump_val
 
     def execute(self, state):
         no_jump = 1
@@ -238,9 +258,7 @@ class RiscvInstr():
         elif self.opcode == "bne":
             return self.execute_bne(state)
         elif self.opcode == "call":
-            print("self.opcode = {}, self.operands = {}".format(self.opcode, self.operands))
-            raise Exception("Call not implemented yet.")
-            pass
+            return self.execute_call(state)
         elif self.opcode == "j":
             return self.execute_j(state)
         elif self.opcode == "lui":

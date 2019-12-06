@@ -37,23 +37,45 @@ class RiscvInterpreter():
         # Set pc to start at 'main'.
         self.state.set_register(32, self.block_labels["main"])
 
+    # Get the block containing the instruction pointer.
+    def set_corresponding_block(self):
+        pc = self.state.get_register(32)
+        block_name, block_val = None, 0
+        for key, val in self.block_labels.items():
+            if block_val <= pc and val <= pc:
+                block_name = key
+                block_val = val
+
+        self.current_block = block_name
+        self.current_function = block_name
+        return
+
+
     def _run_one(self, state, instr):
         """
         Run a single instruction.
         """
         result = instr.execute(self.state)
 
-        # Just executed a jump instruction.
+        # Just executed a jump or call instruction.
         if result and result != 1:
             self.current_block = result
+            if instr.opcode == "call":
+                self.current_function = result
             return True
         # Just executed a return.
         elif result == 0:
-            # Want to return false to stop execution.
-            return not (self.current_function == "main")
+            if self.current_function == "main":
+                # Returning from main, so terminate the program. 
+                return False  
+
+            # Else, update the current_function and block data.
+            self.set_corresponding_block()
+            return True
         elif not result:
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
+
         else:
             pc = self.state.get_register(32)
             self.state.set_register(32, pc+1)
@@ -62,11 +84,11 @@ class RiscvInterpreter():
     def run(self):
         pc = self.state.get_register(32)
         instr = self._instructions[pc]
+        
         # logging
-        print("\nRUN INSTR: ", instr.to_string())
-        print("PROGRAM CTR: ", pc)
-        ran = self._run_one(self.state, instr)
-        return ran
+        print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
+        
+        return self._run_one(self.state, instr)
 
 
 def main():
