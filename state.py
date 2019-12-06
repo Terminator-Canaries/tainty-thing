@@ -3,6 +3,8 @@ state.py
 
 """
 
+import pickle
+
 ABI_TO_REGISTER_IDX = {
         'zero': 0,
         'ra': 1,
@@ -53,12 +55,15 @@ class RiscvState():
         self.STACK_SIZE = stack_size
         self.MEM_SIZE = mem_size
 
+        # Initialize the list of memory.
         self.memory = [0 for i in range(mem_size)]
+
         # To keep track of taint for each byte in memory.
         self.shadow_memory = [0 for i in range(mem_size)]
 
         # Initialize the stack pointer to the end of memory.
         self.set_register('sp', mem_size)
+
         # Set the program counter to the first instruction.
         self.set_register('pc', 0)
 
@@ -80,7 +85,7 @@ class RiscvState():
             mem_location = self.get_register(base) + offset
             self.set_memory(mem_location, update_val)
         else:
-            raise Exception("Instruction operand not registor or memory")
+            raise Exception("Instruction operand not register or memory")
 
     def get_operand_val(self, operand):
         """
@@ -100,7 +105,7 @@ class RiscvState():
         else:
             raise Exception("Operand is not register, memory reference, or constant")
 
-    def get_idx(self, reg):
+    def get_reg_idx(self, reg):
         if type(reg).__name__ == 'str' and reg in ABI_TO_REGISTER_IDX:
             return ABI_TO_REGISTER_IDX[reg]
         elif type(reg).__name__ == 'int':
@@ -109,14 +114,14 @@ class RiscvState():
             raise Exception("Invalid reg {}".format(reg))
 
     def get_register(self, reg):
-        idx = self.get_idx(reg)
+        idx = self.get_reg_idx(reg)
         if idx >= 0 and idx <= 32:
             return self.registers[idx]
         else:
             raise Exception("Attempt to read invalid register")
 
     def set_register(self, reg, val):
-        idx = self.get_idx(reg)
+        idx = self.get_reg_idx(reg)
         if idx >= 0 and idx <= 32:
             self.registers[idx] = val
         else:
@@ -131,3 +136,22 @@ class RiscvState():
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("Memory write out of bounds")
         self.memory[location] = val
+
+    # Pickles the state in its current form.
+    def pickle_current_state(self, fileheader, pickle_jar):
+        pc = self.get_register('pc')
+        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "wb")
+        pickle.dump(self, filename)
+        return
+
+    def load_pickled_state(self, fileheader, pc, pickle_jar):
+        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "rb")
+        load_state = pickle.load(filename)
+        return load_state
+
+
+
+
+
+
+

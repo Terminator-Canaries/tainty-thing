@@ -92,17 +92,17 @@ class RiscvInterpreter():
 
 
 def main():
-    min_args = 2
+    min_args = 3
     if len(sys.argv) < min_args:
-        print('Usage: {} <riscv_file> <program_args>'.format(sys.argv[0]))
+        print('Usage: {} <riscv_file> <pickle_jar> <program_args>'.format(sys.argv[0]))
         sys.exit(1)
+    print("sys.argv[1]: {}".format(sys.argv))
     riscv_file = sys.argv[1]
+    pickle_jar = sys.argv[2]
 
     # TODO: handle arguments
     # TODO: implement program_args as single input file
     # program_args = sys.argv[min_args:]
-
-    # TODO: pickling
 
     interpreter = RiscvInterpreter(riscv_file)
 
@@ -111,6 +111,7 @@ def main():
     # Interpreter loop with taint tracking.
     while(interpreter.run()):
         policy.num_total_instr_run += 1
+        interpreter.state.pickle_current_state("state", pickle_jar)
 
     # Return value is stored in 'a0'.
     print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
