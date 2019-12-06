@@ -62,6 +62,7 @@ class RiscvOperand():
     def to_string(self):
         return str(self._token)
 
+    # Check if string is a valid ABI register name.
     def is_valid_register(self, val):
         register = val.lower()
         if register in ABI_TO_REGISTER_IDX:
@@ -69,9 +70,11 @@ class RiscvOperand():
         else:
             return None
 
+    # Check if int is a valid memory address.
     def is_valid_memory(self, val):
         return int(val) >= 0 and int(val) < 4096
 
+    # Check if string matches pattern 'offset(base)'.
     def is_memory_ref(self):
         return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
 
@@ -101,12 +104,23 @@ class RiscvInstr():
         return str(self._tokens)
 
     def get_jump_target(self, target, lines):
+        # Jump target is a block label.
         if lines[target] is not None:
             pc = lines[target]
+        # Jump target is a line number.
         else:
             pc = target
             raise Exception("Jump target is not a block label")
         return pc
+
+    def generate_mem_operand(self, operand, state):
+        # Calculate int memory address.
+        base = RiscvOperand(operand.mem_reference.get_base())
+        offset = RiscvOperand(operand.mem_reference.get_offset())
+        mem_location = state.get_operand_val(base) + state.get_operand_val(offset)
+        # Create operand representing the address mem_location using format 'offset(base)'.
+        mem_reference = RiscvOperand(str(mem_location) + "(zero)")
+        return mem_reference
 
     # addi    op0, op1, op2
     # op0 = op1 + sext(op2)
@@ -164,18 +178,16 @@ class RiscvInstr():
     def execute_lw(self, state):
         if len(self.operands) < 2:
             raise InsufficientOperands()
-        base = RiscvOperand(self.operands[1].mem_reference.get_base())
-        offset = RiscvOperand(self.operands[1].mem_reference.get_offset())
-        mem_location = RiscvOperand(str(state.get_operand_val(base) + state.get_operand_val(offset)))
-        load_val = state.get_operand_val(mem_location)
+        mem_reference = self.generate_mem_operand(self.operands[1], state)
+        load_val = state.get_operand_val(mem_reference)
         state.update_val(self.operands[0], load_val)
 
     def execute_ret(self, state):
         if len(self.operands) != 0:
             raise InsufficientOperands()
-        # Return address will be at top of stack.
-        sp = state.get_register(2)
-        state.set_register(32, sp)
+        # Return address is stored in 'ra'.
+        ra = state.get_register(1)
+        state.set_register(32, ra)
         # TODO: update current_block
 
     # sw    op0, op1(op2)
@@ -183,16 +195,13 @@ class RiscvInstr():
     def execute_sw(self, state):
         if len(self.operands) < 2:
             raise InsufficientOperands()
-        print("ops: ", [op.to_string() for op in self.operands])
-        base = RiscvOperand(self.operands[1].mem_reference.get_base())
-        offset = RiscvOperand(self.operands[1].mem_reference.get_offset())
-        mem_location = RiscvOperand(str(state.get_operand_val(base) + state.get_operand_val(offset)))
+        mem_reference = self.generate_mem_operand(self.operands[1], state)
         store_val = state.get_operand_val(self.operands[0])
-        state.update_val(mem_location, store_val)
+        state.update_val(mem_reference, store_val)
 
     def execute(self, state, lines):
         no_jump = 1
-        if self.opcode == "addi":
+        if self.opcode == "addi" or self.opcode == "add":
             self.execute_addi(state)
         elif self.opcode == "beq":
             return self.execute_beq(state, lines)

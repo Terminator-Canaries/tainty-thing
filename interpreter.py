@@ -57,10 +57,10 @@ class RiscvInterpreter():
         pc = self.state.get_register(32)
         instr = self._instructions[pc]
         # logging
-        print("Run: ", instr.to_string())
-        print("Program counter: ", pc)
-        print(self.state.print_registers())
-        return self._run_one(self.state, instr)
+        print("\nRUN INSTR: ", instr.to_string())
+        print("PROGRAM CTR: ", pc)
+        ran = self._run_one(self.state, instr)
+        return ran
 
 
 def main():
@@ -77,14 +77,17 @@ def main():
     # TODO: pickling
 
     interpreter = RiscvInterpreter(riscv_file)
+    interpreter.current_block = "main:"
+
     policy = TaintPolicy()
 
     # Interpreter loop with taint tracking.
     while(interpreter.run()):
         policy.num_total_instr_run += 1
 
-    # Return value stored in 'ra'.
-    return interpreter.state.get_register(1)
+    # Return value is stored in 'a0'.
+    print("\nRETURN VALUE: ", interpreter.state.get_register(10))
+    return 0
 
 
 if __name__ == '__main__':

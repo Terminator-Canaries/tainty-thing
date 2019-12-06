@@ -13,7 +13,6 @@ ABI_TO_REGISTER_IDX = {
         't1': 6,
         't2': 7,
         's0': 8,
-        'fp': 8,
         's1': 9,
         'a0': 10,
         'a1': 11,
@@ -76,14 +75,10 @@ class RiscvState():
         if operand.is_register():
             self.set_register(operand.register_idx, update_val)
         elif operand.is_memory():
-            mem_location = self.get_register(operand.get_base()) + operand.get_offset()
+            base = ABI_TO_REGISTER_IDX[operand.mem_reference.get_base()]
+            offset = int(operand.mem_reference.get_offset())
+            mem_location = self.get_register(base) + offset
             self.set_memory(mem_location, update_val)
-        elif operand.is_constant():
-            mem_location = int(operand.to_string())
-            if operand.is_valid_memory(mem_location):
-                self.set_memory(mem_location, update_val)
-            else:
-                raise Exception("Instruction operand not registor or memory")
         else:
             raise Exception("Instruction operand not registor or memory")
 
@@ -95,37 +90,36 @@ class RiscvState():
             return self.get_register(operand.register_idx)
         elif operand.is_memory():
             base = operand.mem_reference.get_base()
-            offset = operand.mem_reference.get_offset()
-            if self.is_valid_register(base):
-                base_val = self.get_register(ABI_TO_REGISTER_IDX[base])
-                mem_location = base_val + offset
+            offset = int(operand.mem_reference.get_offset())
+            if operand.is_valid_register(base) is not None:
+                mem_location = self.get_register(ABI_TO_REGISTER_IDX[base]) + offset
                 return self.get_memory(mem_location)
             else:
-                raise Exception("base is not a valid register")
+                raise Exception("Base is not a valid register")
         elif operand.is_constant():
             return operand.constant
         else:
-            print("operand is not register, memory reference, or constant")
+            print("Operand is not register, memory reference, or constant")
             return operand.token
 
     def get_register(self, idx):
         if idx >= 0 and idx <= 32:
             return self.registers[idx]
         else:
-            raise Exception("attempt to read invalid register")
+            raise Exception("Attempt to read invalid register")
 
     def set_register(self, idx, val):
         if idx >= 0 and idx <= 32:
             self.registers[idx] = val
         else:
-            raise Exception("attempt to write to invalid register")
+            raise Exception("Attempt to write to invalid register")
 
     def get_memory(self, location):
         if location < 0 or location > self.MEM_SIZE:
-            raise Exception("memory read out of bounds")
+            raise Exception("Memory read out of bounds")
         return self.memory[location]
 
     def set_memory(self, location, val):
         if location < 0 or location > self.MEM_SIZE:
-            raise Exception("memory write out of bounds")
+            raise Exception("Memory write out of bounds")
         self.memory[location] = val
