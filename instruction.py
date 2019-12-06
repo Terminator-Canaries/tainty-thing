@@ -64,7 +64,6 @@ class RiscvOperand():
             self.type = OPERAND_CALL_FUNCTION
             self.constant = str(self._token)          
         else:
-            print(self._token, block_labels)
             self._type = OPERAND_CONSTANT
             self.constant = int(self._token)
 
@@ -90,6 +89,11 @@ class RiscvOperand():
 
     def is_label(self):
         return self._type == OPERAND_LABEL
+
+    def get_target_name(self):
+        if self._type != OPERAND_LABEL:
+            raise Exception("Target {} is not an operand label.".format(self.to_string()))
+        return self._token
 
 
 class RiscvInstr():
@@ -155,29 +159,33 @@ class RiscvInstr():
     def execute_beq(self, state):
         if len(self.operands) < 3:
             raise InsufficientOperands()
-        branch_val = state.get_operand_val(self.operands[0])
+        branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
         if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
             state.set_register(32, pc)
-        return branch_val
+            return branch_val
+        else:
+            return 1  # no_jump
 
     # bne    op0, op1, op2
     # jump to op2 if op0 != op1
     def execute_bne(self, state):
         if len(self.operands) < 3:
             raise InsufficientOperands()
-        branch_val = state.get_operand_val(self.operands[0])
+        branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
         if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
             state.set_register(32, pc)
-        return branch_val
+            return branch_val
+        else:
+            return 1  # no_jump
 
     # j    op0
     # jump to op0
     def execute_j(self, state):
         if len(self.operands) < 1:
             raise InsufficientOperands()
-        jump_val = state.get_operand_val(self.operands[0])
+        jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
         state.set_register(32, pc)
         return jump_val
@@ -205,7 +213,10 @@ class RiscvInstr():
         # Return address is stored in 'ra'.
         ra = state.get_register(1)
         state.set_register(32, ra)
-        # TODO: update current_block
+
+        # TODO: update current_block and currenct_function
+
+
 
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
@@ -223,15 +234,15 @@ class RiscvInstr():
         elif self.opcode == "subi" or self.opcode == "sub":
             self.execute_subi(state)
         elif self.opcode == "beq":
-            return self.execute_beq(state, self._block_labels)
+            return self.execute_beq(state)
         elif self.opcode == "bne":
-            return self.execute_bne(state, self._block_labels)
+            return self.execute_bne(state)
         elif self.opcode == "call":
             print("self.opcode = {}, self.operands = {}".format(self.opcode, self.operands))
             raise Exception("Call not implemented yet.")
             pass
         elif self.opcode == "j":
-            return self.execute_j(state, self._block_labels)
+            return self.execute_j(state)
         elif self.opcode == "lui":
             self.execute_lui(state)
         elif self.opcode == "lw":

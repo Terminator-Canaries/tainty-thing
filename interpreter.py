@@ -7,10 +7,8 @@ from parser import RiscvParser
 from state import RiscvState
 from taint import ValueTaint, TaintPolicy
 
-
 MEM_SIZE = 4096
 STACK_SIZE = 128
-
 
 class RiscvInterpreter():
     """
@@ -18,7 +16,6 @@ class RiscvInterpreter():
     """
     def __init__(self, riscv_file):
         self.state = RiscvState(MEM_SIZE, STACK_SIZE)
-        self.current_block = None
 
         parser = RiscvParser(riscv_file)
         self._instructions = parser.get_instructions()
@@ -31,8 +28,13 @@ class RiscvInterpreter():
         # Need to add instruction policy argument.
         self.taint_policy = TaintPolicy()
 
-        # Set Main as the current block.
+        # Current block changes at every jump, call, and return.
         self.current_block = "main"
+        
+        # Function changes only during calls and returns.
+        self.current_function = "main"  
+
+        # Set pc to start at 'main'.
         self.state.set_register(32, self.block_labels["main"])
 
     def _run_one(self, state, instr):
@@ -48,7 +50,7 @@ class RiscvInterpreter():
         # Just executed a return.
         elif result == 0:
             # Want to return false to stop execution.
-            return not (self.current_block == "main:")
+            return not (self.current_function == "main")
         elif not result:
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
