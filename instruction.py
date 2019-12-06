@@ -111,7 +111,6 @@ class RiscvInstr():
         self._block_labels = block_labels
         self.opcode = tokens[0]
         self.operands = []
-
         if len(tokens) > 1:
             self.operands = [RiscvOperand(operand, self._block_labels)
                              for operand in tokens[1:]]
@@ -167,7 +166,7 @@ class RiscvInstr():
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
         if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
-            state.set_register(32, pc)
+            state.set_register('pc', pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -180,7 +179,7 @@ class RiscvInstr():
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
         if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
-            state.set_register(32, pc)
+            state.set_register('pc', pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -192,7 +191,7 @@ class RiscvInstr():
             raise InsufficientOperands()
         jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
-        state.set_register(32, pc)
+        state.set_register('pc', pc)
         return jump_val
 
     # lui    op0, op1
@@ -216,8 +215,8 @@ class RiscvInstr():
         if len(self.operands) != 0:
             raise InsufficientOperands()
         # Return address is stored in 'ra'.
-        ra = state.get_register(1)
-        state.set_register(32, ra)
+        ra = state.get_register('ra')
+        state.set_register('pc', ra)
 
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
@@ -237,13 +236,13 @@ class RiscvInstr():
             raise Exception("Function args not yet handled.")
         
         # Set the return address in 'ra' to 'pc'+1.
-        pc = state.get_register(32)
-        state.set_register(1, pc+1)
+        pc = state.get_register('pc')
+        state.set_register('ra', pc+1)
 
         # Jump to the function name.
         jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
-        state.set_register(32, pc)
+        state.set_register('pc', pc)
 
         return jump_val
 

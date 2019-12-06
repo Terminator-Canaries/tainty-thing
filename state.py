@@ -58,9 +58,9 @@ class RiscvState():
         self.shadow_memory = [0 for i in range(mem_size)]
 
         # Initialize the stack pointer to the end of memory.
-        self.set_register(2, mem_size)
+        self.set_register('sp', mem_size)
         # Set the program counter to the first instruction.
-        self.set_register(32, 0)
+        self.set_register('pc', 0)
 
     def print_registers(self):
         for register, idx in ABI_TO_REGISTER_IDX.items():
@@ -100,14 +100,23 @@ class RiscvState():
         else:
             raise Exception("Operand is not register, memory reference, or constant")
 
+    def get_idx(self, reg):
+        if type(reg).__name__ == 'str' and reg in ABI_TO_REGISTER_IDX:
+            return ABI_TO_REGISTER_IDX[reg]
+        elif type(reg).__name__ == 'int':
+            return reg
+        else:
+            raise Exception("Invalid reg {}".format(reg))
 
-    def get_register(self, idx):
+    def get_register(self, reg):
+        idx = self.get_idx(reg)
         if idx >= 0 and idx <= 32:
             return self.registers[idx]
         else:
             raise Exception("Attempt to read invalid register")
 
-    def set_register(self, idx, val):
+    def set_register(self, reg, val):
+        idx = self.get_idx(reg)
         if idx >= 0 and idx <= 32:
             self.registers[idx] = val
         else:

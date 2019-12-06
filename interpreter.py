@@ -35,11 +35,11 @@ class RiscvInterpreter():
         self.current_function = "main"  
 
         # Set pc to start at 'main'.
-        self.state.set_register(32, self.block_labels["main"])
+        self.state.set_register('pc', self.block_labels["main"])
 
     # Get the block containing the instruction pointer.
     def set_corresponding_block(self):
-        pc = self.state.get_register(32)
+        pc = self.state.get_register('pc')
         block_name, block_val = None, 0
         for key, val in self.block_labels.items():
             if block_val <= pc and val <= pc:
@@ -77,17 +77,17 @@ class RiscvInterpreter():
             sys.exit(1)
 
         else:
-            pc = self.state.get_register(32)
-            self.state.set_register(32, pc+1)
+            pc = self.state.get_register('pc')
+            self.state.set_register('pc', pc+1)
             return True
 
     def run(self):
-        pc = self.state.get_register(32)
+        pc = self.state.get_register('pc')
         instr = self._instructions[pc]
         
         # logging
         print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
-        
+
         return self._run_one(self.state, instr)
 
 
@@ -113,7 +113,7 @@ def main():
         policy.num_total_instr_run += 1
 
     # Return value is stored in 'a0'.
-    print("\nRETURN VALUE: ", interpreter.state.get_register(10))
+    print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
     return 0
 
 
