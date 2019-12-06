@@ -74,26 +74,36 @@ class RiscvState():
             print("Memory at location {} contains value {} with taint {}"
                   .format(idx, val.get_value(), val.print_taint()))
 
-    def update(self, arg, update_val):
-        if arg.is_register():
-            self.state.set_register(arg.register_idx, update_val)
-        elif arg.is_memory():
-            self.state.set_memory(arg.mem_location, update_val)
+     # Update single register or memory location.
+    def update(self, operand, update_val):
+        if operand.is_register():
+            self.state.set_register(operand.register_idx, update_val)
+        elif operand.is_memory():
+            self.state.set_memory(operand.mem_location, update_val)
         else:
-            raise Exception("Instruction argument not registor or memory")
+            raise Exception("Instruction operandument not registor or memory")
 
-    def get_arg_val(self, arg):
+    def get_operand_val(self, operand):
         """
-        Returns the integer value of the given argument.
+        Returns the integer value of the given operand.
         """
-        print(type(arg))
-        if arg.is_register():
-            return self.get_register(arg.register_idx)
-        elif arg.is_memory():
-            return self.get_memory(arg.mem_location)
+        print(type(operand))
+        if operand.is_register():
+            return self.get_register(operand.register_idx)
+        elif operand.is_memory():
+            base = operand.mem_reference.get_base()
+            offset = operand.mem_reference.get_offset()
+            if self.is_valid_register(base):
+                base_val = self.get_register(ABI_TO_REGISTER_IDX[base])
+                mem_location = base_val + offset
+                return self.get_memory(mem_location)
+            else:
+                raise Exception("base is not a valid register")
+        elif operand.is_constant():
+            return operand.constant
         else:
-            print("is something else!")
-            return arg.token
+            print("operand is not register, memory reference, or constant")
+            return operand.token
 
     def get_register(self, idx):
         if idx >= 0 and idx <= 32:
