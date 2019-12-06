@@ -36,6 +36,7 @@ class RiscvInterpreter():
         Run a single instruction.
         """
         result = instr.execute(self.state, self.block_labels)
+
         # Just executed a jump instruction.
         if result and result != 1:
             self.current_block = result

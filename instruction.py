@@ -53,6 +53,16 @@ class RiscvOperand():
     def is_memory_ref(self):
         return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
 
+    def is_valid_register(self, register):
+        register = register.lower()
+        if register in ABI_TO_REGISTER_IDX:
+            return ABI_TO_REGISTER_IDX[register]
+        else:
+            return None
+
+    def is_memory_ref(self, memory):
+        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', memory)
+
     def is_register(self):
         return self.type == ARG_REGISTER
 

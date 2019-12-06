@@ -1,5 +1,6 @@
 """
 state.py
+
 """
 
 ABI_TO_REGISTER_IDX = {
@@ -62,7 +63,7 @@ class RiscvState():
         # Set the program counter to the first instruction.
         self.set_register(32, 0)
 
-    def print_register_contents(self):
+    def print(self):
         # Print register contents.
         for register, idx in ABI_TO_REGISTER_IDX.items():
             val = self.registers[idx]
@@ -73,7 +74,6 @@ class RiscvState():
             print("Memory at location {} contains value {} with taint {}"
                   .format(idx, val.get_value(), val.print_taint()))
 
-    # Update single register or memory location.
     def update(self, arg, update_val):
         if arg.is_register():
             self.state.set_register(arg.register_idx, update_val)
