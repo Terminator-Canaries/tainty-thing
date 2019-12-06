@@ -26,14 +26,12 @@ class MemoryReference():
         base = token.split('(')[1].strip(')').lower()
         offset = token.split('(')[0]
 
+        self.base = base
         if offset[0] == '-':
             self.offset = -int(offset[1:])
         else:
             self.offset = int(offset)
         self.offset = offset
-
-        self.base = base
-        self.mem_location = -1
 
     def get_offset(self):
         return self.offset
@@ -50,7 +48,7 @@ class RiscvOperand():
         self._token = token
         self._offset = 0
 
-        if self.is_valid_register(self._token):
+        if self.is_valid_register(self._token) is not None:
             self.type = OPERAND_REGISTER
             self.register_name = self._token
             self.register_idx = ABI_TO_REGISTER_IDX[self._token]
@@ -59,26 +57,23 @@ class RiscvOperand():
             self.mem_reference = MemoryReference(token)
         else:
             self.type = OPERAND_CONSTANT
-            self.constant = int(token)
+            self.constant = int(self._token)
 
     def to_string(self):
         return str(self._token)
 
-    def is_valid_register(self, register):
-        return register.lower() in ABI_TO_REGISTER_IDX
-
-    def is_memory_ref(self):
-        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
-
-    def is_valid_register(self, register):
-        register = register.lower()
+    def is_valid_register(self, val):
+        register = val.lower()
         if register in ABI_TO_REGISTER_IDX:
             return ABI_TO_REGISTER_IDX[register]
         else:
             return None
 
-    def is_memory_ref(self, memory):
-        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', memory)
+    def is_valid_memory(self, val):
+        return int(val) >= 0 and int(val) < 4096
+
+    def is_memory_ref(self):
+        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
 
     def is_register(self):
         return self.type == OPERAND_REGISTER
@@ -105,6 +100,14 @@ class RiscvInstr():
     def to_string(self):
         return str(self._tokens)
 
+    def get_jump_target(self, target, lines):
+        if lines[target] is not None:
+            pc = lines[target]
+        else:
+            pc = target
+            raise Exception("Jump target is not a block label")
+        return pc
+
     # addi    op0, op1, op2
     # op0 = op1 + sext(op2)
     def execute_addi(self, state):
@@ -113,70 +116,79 @@ class RiscvInstr():
         # Technically op2 is sign extended but doesn't matter in Python.
         val1 = state.get_operand_val(self.operands[1])
         val2 = state.get_operand_val(self.operands[2])
-        print(val1, val2)
-        print(type(val1), type(val2))
-        op0 = val1 + val2
-        state.update(self.operands[0].mem_location, op0)
+        update_val = val1 + val2
+        state.update_val(self.operands[0], update_val)
 
     # beq    op0, op1, op2
     # jump to op2 if op0 == op1
     def execute_beq(self, state, lines):
-        op0 = state.get_operand_val(self.operands[0])
-        if lines[op0]:
-            pc = lines[op0]
-        else:
-            pc = op0
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        branch_val = state.get_operand_val(self.operands[0])
+        pc = self.get_jump_target(branch_val, lines)
         if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
             state.set_register(32, pc)
-        return op0
+        return branch_val
 
     # bne    op0, op1, op2
     # jump to op2 if op0 != op1
     def execute_bne(self, state, lines):
-        op0 = state.get_operand_val(self.operands[0])
-        if lines[op0]:
-            pc = lines[op0]
-        else:
-            pc = op0
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        branch_val = state.get_operand_val(self.operands[0])
+        pc = self.get_jump_target(branch_val, lines)
         if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
             state.set_register(32, pc)
-        return op0
+        return branch_val
 
     # j    op0
     # jump to op0
     def execute_j(self, state, lines):
-        op0 = state.get_operand_val(self.operands[0])
-        if lines[op0]:
-            pc = lines[op0]
-        else:
-            pc = op0
+        if len(self.operands) < 1:
+            raise InsufficientOperands()
+        jump_val = state.get_operand_val(self.operands[0])
+        pc = self.get_jump_target(jump_val, lines)
         state.set_register(32, pc)
-        return op0
+        return jump_val
 
     # lui    op0, op1
     # op0 = op1 << 12
     def execute_lui(self, state):
-        op0 = state.get_operand_val(self.operands[1]) << 12
-        state.update_val(self.operands[0].mem_location, op0)
+        if len(self.operands) < 2:
+            raise InsufficientOperands()
+        update_val = state.get_operand_val(self.operands[1]) << 12
+        state.update_val(self.operands[0], update_val)
 
     # lw    op0, op1(op2)
-    # op0 = op2 + op1
+    # op0 = val(op2 + op1)
     def execute_lw(self, state):
-        op0 = state.get_operand_val(self.operands[2]) + state.get_operand_val(self.operands[1])
-        state.update_val(self.operands[0].mem_location, op0)
+        if len(self.operands) < 2:
+            raise InsufficientOperands()
+        base = RiscvOperand(self.operands[1].mem_reference.get_base())
+        offset = RiscvOperand(self.operands[1].mem_reference.get_offset())
+        mem_location = RiscvOperand(str(state.get_operand_val(base) + state.get_operand_val(offset)))
+        load_val = state.get_operand_val(mem_location)
+        state.update_val(self.operands[0], load_val)
 
     def execute_ret(self, state):
+        if len(self.operands) != 0:
+            raise InsufficientOperands()
         # Return address will be at top of stack.
         sp = state.get_register(2)
         state.set_register(32, sp)
         # TODO: update current_block
 
     # sw    op0, op1(op2)
-    # op2 + op1 = op0
+    # val(op2 + op1) = op0
     def execute_sw(self, state):
-        mem_location = state.get_operand_val(self.operands[2]) + state.get_operand_val(self.operands[1])
-        op0 = state.get_operand_val(self.operands[0])
-        state.update_val(mem_location, op0)
+        if len(self.operands) < 2:
+            raise InsufficientOperands()
+        print("ops: ", [op.to_string() for op in self.operands])
+        base = RiscvOperand(self.operands[1].mem_reference.get_base())
+        offset = RiscvOperand(self.operands[1].mem_reference.get_offset())
+        mem_location = RiscvOperand(str(state.get_operand_val(base) + state.get_operand_val(offset)))
+        store_val = state.get_operand_val(self.operands[0])
+        state.update_val(mem_location, store_val)
 
     def execute(self, state, lines):
         no_jump = 1

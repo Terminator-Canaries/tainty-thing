@@ -63,31 +63,34 @@ class RiscvState():
         # Set the program counter to the first instruction.
         self.set_register(32, 0)
 
-    def print(self):
-        # Print register contents.
+    def print_registers(self):
         for register, idx in ABI_TO_REGISTER_IDX.items():
             val = self.registers[idx]
-            print("Register {} contains value {} with taint {}"
-                  .format(register, val.get_value(), val.print_taint()))
-        # Print memory contents.
+            print("Register {} contains value {}".format(register, val))
+        
+    def print_memory(self):
         for idx, val in enumerate(self.memory):
-            print("Memory at location {} contains value {} with taint {}"
-                  .format(idx, val.get_value(), val.print_taint()))
+            print("Memory at location {} contains value {}".format(idx, val))
 
-     # Update single register or memory location.
-    def update(self, operand, update_val):
+    def update_val(self, operand, update_val):
         if operand.is_register():
-            self.state.set_register(operand.register_idx, update_val)
+            self.set_register(operand.register_idx, update_val)
         elif operand.is_memory():
-            self.state.set_memory(operand.mem_location, update_val)
+            mem_location = self.get_register(operand.get_base()) + operand.get_offset()
+            self.set_memory(mem_location, update_val)
+        elif operand.is_constant():
+            mem_location = int(operand.to_string())
+            if operand.is_valid_memory(mem_location):
+                self.set_memory(mem_location, update_val)
+            else:
+                raise Exception("Instruction operand not registor or memory")
         else:
-            raise Exception("Instruction operandument not registor or memory")
+            raise Exception("Instruction operand not registor or memory")
 
     def get_operand_val(self, operand):
         """
         Returns the integer value of the given operand.
         """
-        print(type(operand))
         if operand.is_register():
             return self.get_register(operand.register_idx)
         elif operand.is_memory():

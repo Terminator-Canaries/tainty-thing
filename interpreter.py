@@ -21,8 +21,8 @@ class RiscvInterpreter():
         self.current_block = None
 
         parser = RiscvParser(riscv_file)
-        self._instructions = parser.instructions()
-        self.block_labels = parser.labels()
+        self._instructions = parser.get_instructions()
+        self.block_labels = parser.get_labels()
 
         # Snapshots of state created for each instruction.
         self.pickles = []
@@ -49,12 +49,17 @@ class RiscvInterpreter():
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
         else:
+            pc = self.state.get_register(32)
+            self.state.set_register(32, pc+1)
             return True
 
     def run(self):
         pc = self.state.get_register(32)
         instr = self._instructions[pc]
+        # logging
         print("Run: ", instr.to_string())
+        print("Program counter: ", pc)
+        print(self.state.print_registers())
         return self._run_one(self.state, instr)
 
 
@@ -72,8 +77,6 @@ def main():
     # TODO: pickling
 
     interpreter = RiscvInterpreter(riscv_file)
-
-    # TODO: add instruction_policy
     policy = TaintPolicy()
 
     # Interpreter loop with taint tracking.

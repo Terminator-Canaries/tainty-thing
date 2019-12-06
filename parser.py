@@ -21,14 +21,14 @@ class RiscvParser():
         with open(bin_file, 'r') as file:
             self.data = file.readlines()
             for line in self.data:
-                line = line.strip().strip("\n").strip("\t")
+                line = line.strip()
 
                 # skip blank lines
                 if not line:
                     continue
 
                 # skip lines like: .file	"program.c" or .cfi_endproc
-                # but not lables like: .Lfunc_end0:
+                # but not labels like: .Lfunc_end0:
                 if line[0] == '.'and ':' not in line:
                     continue
 
@@ -57,8 +57,8 @@ class RiscvParser():
         for line in self._data:
             print(line)
 
-    def instructions(self):
+    def get_instructions(self):
         return self._instructions
 
-    def labels(self):
+    def get_labels(self):
         return self._labels
