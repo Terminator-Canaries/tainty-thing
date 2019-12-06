@@ -31,6 +31,10 @@ class RiscvInterpreter():
         # Need to add instruction policy argument.
         self.taint_policy = TaintPolicy()
 
+        # Set Main as the current block.
+        self.current_block = "main"
+        self.state.set_register(32, self.block_labels["main"])
+
     def _run_one(self, state, instr):
         """
         Run a single instruction.
@@ -77,7 +81,6 @@ def main():
     # TODO: pickling
 
     interpreter = RiscvInterpreter(riscv_file)
-    interpreter.current_block = "main:"
 
     policy = TaintPolicy()
 

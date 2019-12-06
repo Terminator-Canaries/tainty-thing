@@ -5,7 +5,6 @@ parsing.py
 
 from instruction import RiscvInstr
 
-
 class RiscvParser():
     """
     Defines a parser for raw RISC-V binary files.
