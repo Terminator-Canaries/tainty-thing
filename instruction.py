@@ -133,6 +133,17 @@ class RiscvInstr():
         update_val = val1 + val2
         state.update_val(self.operands[0], update_val)
 
+    # subi    op0, op1, op2
+    # op0 = op1 - sext(op2)
+    def execute_subi(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 - val2
+        state.update_val(self.operands[0], update_val)
+
     # beq    op0, op1, op2
     # jump to op2 if op0 == op1
     def execute_beq(self, state, lines):
@@ -203,6 +214,8 @@ class RiscvInstr():
         no_jump = 1
         if self.opcode == "addi" or self.opcode == "add":
             self.execute_addi(state)
+        elif self.opcode == "subi" or self.opcode == "sub":
+            self.execute_subi(state)
         elif self.opcode == "beq":
             return self.execute_beq(state, lines)
         elif self.opcode == "bne":
