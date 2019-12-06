@@ -9,6 +9,7 @@ from state import ABI_TO_REGISTER_IDX
 OPERAND_REGISTER = 1
 OPERAND_MEMORY = 2
 OPERAND_CONSTANT = 3
+OPERAND_CALL_FUNCTION = 4
 
 
 class InsufficientOperands(Exception):
@@ -47,6 +48,7 @@ class RiscvOperand():
     def __init__(self, token):
         self._token = token
         self._offset = 0
+        self._supported_functions = ["get_user_location", "__mulsi3"]
 
         if self.is_valid_register(self._token) is not None:
             self.type = OPERAND_REGISTER
@@ -55,6 +57,9 @@ class RiscvOperand():
         elif self.is_memory_ref():
             self.type = OPERAND_MEMORY
             self.mem_reference = MemoryReference(token)
+        elif self.is_call_function():
+            self.type = OPERAND_CALL_FUNCTION
+            self.constant = str(self._token)          
         else:
             self.type = OPERAND_CONSTANT
             self.constant = int(self._token)
@@ -77,6 +82,10 @@ class RiscvOperand():
     # Check if string matches pattern 'offset(base)'.
     def is_memory_ref(self):
         return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
+
+    # Check if the token is a supported function.
+    def is_call_function(self):
+        return self._token in self._supported_functions
 
     def is_register(self):
         return self.type == OPERAND_REGISTER
@@ -221,7 +230,8 @@ class RiscvInstr():
         elif self.opcode == "bne":
             return self.execute_bne(state, lines)
         elif self.opcode == "call":
-            # TODO: simulate calling function
+            print("self.opcode = {}, self.operands = {}".format(self.opcode, self.operands))
+            raise Exception("Call not implemented yet.")
             pass
         elif self.opcode == "j":
             return self.execute_j(state, lines)
