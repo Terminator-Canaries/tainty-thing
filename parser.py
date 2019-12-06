@@ -20,6 +20,7 @@ class RiscvParser():
 
         with open(bin_file, 'r') as file:
             self.data = file.readlines()
+            instruction_lines = []
             for line in self.data:
                 line = line.strip()
 
@@ -40,17 +41,20 @@ class RiscvParser():
                 if ':' in line:
                     # Strip off the extra comments from labels
                     # Ex.) "main:     # @main" should just be "main:"
-                    label = line.split()[0]
+                    label = line.split(':')[0]
                     # Map the label to the instruction index.
-                    self._labels[label] = len(self._instructions)
+                    self._labels[label] = len(instruction_lines)
                     continue
 
                 # Found an instruction.
+                instruction_lines.append(line)
+
+            for line in instruction_lines:
                 self._instructions.append(self._line_to_instruction(line))
 
     def _line_to_instruction(self, line):
         tokens = [token.strip(',') for token in line.split()]
-        return RiscvInstr(tokens)
+        return RiscvInstr(tokens, self._labels)
 
     def print_content(self):
         print("RISC-V BINARY:")

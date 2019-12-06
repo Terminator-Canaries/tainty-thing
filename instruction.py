@@ -9,6 +9,7 @@ from state import ABI_TO_REGISTER_IDX
 OPERAND_REGISTER = 1
 OPERAND_MEMORY = 2
 OPERAND_CONSTANT = 3
+OPERAND_LABEL = 4
 
 
 class InsufficientOperands(Exception):
@@ -44,7 +45,7 @@ class RiscvOperand():
     """
     Represents an abstract righthand side operand.
     """
-    def __init__(self, token):
+    def __init__(self, token, block_labels):
         self._token = token
         self._offset = 0
 
@@ -55,7 +56,11 @@ class RiscvOperand():
         elif self.is_memory_ref():
             self.type = OPERAND_MEMORY
             self.mem_reference = MemoryReference(token)
+        elif self._token in block_labels:
+            self.type = OPERAND_LABEL
+            self.target_line = block_labels[self._token]
         else:
+            print(self._token, block_labels)
             self.type = OPERAND_CONSTANT
             self.constant = int(self._token)
 
@@ -92,21 +97,23 @@ class RiscvInstr():
     """
     Represents a single line of RISC-V binary.
     """
-    def __init__(self, tokens):
+    def __init__(self, tokens, block_labels):
         self._tokens = tokens
+        self._block_labels = block_labels
         self.opcode = tokens[0]
         self.operands = []
 
         if len(tokens) > 1:
-            self.operands = [RiscvOperand(operand) for operand in tokens[1:]]
+            self.operands = [RiscvOperand(operand, self._block_labels)
+                             for operand in tokens[1:]]
 
     def to_string(self):
         return str(self._tokens)
 
-    def get_jump_target(self, target, lines):
+    def get_jump_target(self, target):
         # Jump target is a block label.
-        if lines[target] is not None:
-            pc = lines[target]
+        if self._block_labels[target] is not None:
+            pc = self._block_labels[target]
         # Jump target is a line number.
         else:
             pc = target
@@ -115,11 +122,11 @@ class RiscvInstr():
 
     def generate_mem_operand(self, operand, state):
         # Calculate int memory address.
-        base = RiscvOperand(operand.mem_reference.get_base())
-        offset = RiscvOperand(operand.mem_reference.get_offset())
+        base = RiscvOperand(operand.mem_reference.get_base(), self._block_labels)
+        offset = RiscvOperand(operand.mem_reference.get_offset(), self._block_labels)
         mem_location = state.get_operand_val(base) + state.get_operand_val(offset)
         # Create operand representing the address mem_location using format 'offset(base)'.
-        mem_reference = RiscvOperand(str(mem_location) + "(zero)")
+        mem_reference = RiscvOperand(str(mem_location) + "(zero)", self._block_labels)
         return mem_reference
 
     # addi    op0, op1, op2
@@ -135,33 +142,33 @@ class RiscvInstr():
 
     # beq    op0, op1, op2
     # jump to op2 if op0 == op1
-    def execute_beq(self, state, lines):
+    def execute_beq(self, state):
         if len(self.operands) < 3:
             raise InsufficientOperands()
         branch_val = state.get_operand_val(self.operands[0])
-        pc = self.get_jump_target(branch_val, lines)
+        pc = self.get_jump_target(branch_val)
         if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
             state.set_register(32, pc)
         return branch_val
 
     # bne    op0, op1, op2
     # jump to op2 if op0 != op1
-    def execute_bne(self, state, lines):
+    def execute_bne(self, state):
         if len(self.operands) < 3:
             raise InsufficientOperands()
         branch_val = state.get_operand_val(self.operands[0])
-        pc = self.get_jump_target(branch_val, lines)
+        pc = self.get_jump_target(branch_val)
         if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
             state.set_register(32, pc)
         return branch_val
 
     # j    op0
     # jump to op0
-    def execute_j(self, state, lines):
+    def execute_j(self, state):
         if len(self.operands) < 1:
             raise InsufficientOperands()
         jump_val = state.get_operand_val(self.operands[0])
-        pc = self.get_jump_target(jump_val, lines)
+        pc = self.get_jump_target(jump_val)
         state.set_register(32, pc)
         return jump_val
 
@@ -199,19 +206,19 @@ class RiscvInstr():
         store_val = state.get_operand_val(self.operands[0])
         state.update_val(mem_reference, store_val)
 
-    def execute(self, state, lines):
+    def execute(self, state):
         no_jump = 1
         if self.opcode == "addi" or self.opcode == "add":
             self.execute_addi(state)
         elif self.opcode == "beq":
-            return self.execute_beq(state, lines)
+            return self.execute_beq(state, self._block_labels)
         elif self.opcode == "bne":
-            return self.execute_bne(state, lines)
+            return self.execute_bne(state, self._block_labels)
         elif self.opcode == "call":
             # TODO: simulate calling function
             pass
         elif self.opcode == "j":
-            return self.execute_j(state, lines)
+            return self.execute_j(state, self._block_labels)
         elif self.opcode == "lui":
             self.execute_lui(state)
         elif self.opcode == "lw":
