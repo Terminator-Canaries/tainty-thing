@@ -66,7 +66,7 @@ class RiscvState():
         for register, idx in ABI_TO_REGISTER_IDX.items():
             val = self.registers[idx]
             print("Register {} contains value {}".format(register, val))
-        
+
     def print_memory(self):
         for idx, val in enumerate(self.memory):
             print("Memory at location {} contains value {}".format(idx, val))
@@ -91,11 +91,8 @@ class RiscvState():
         elif operand.is_memory():
             base = operand.mem_reference.get_base()
             offset = int(operand.mem_reference.get_offset())
-            if operand.is_valid_register(base) is not None:
-                mem_location = self.get_register(ABI_TO_REGISTER_IDX[base]) + offset
-                return self.get_memory(mem_location)
-            else:
-                raise Exception("Base is not a valid register")
+            mem_location = self.get_register(ABI_TO_REGISTER_IDX[base]) + offset
+            return self.get_memory(mem_location)
         elif operand.is_constant():
             return operand.constant
         else:
