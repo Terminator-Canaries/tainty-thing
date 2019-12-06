@@ -49,48 +49,39 @@ class RiscvOperand():
         self._token = token
         self._offset = 0
 
-        if self.is_valid_register(self._token) is not None:
-            self.type = OPERAND_REGISTER
+        if self._token in ABI_TO_REGISTER_IDX:
+            self._type = OPERAND_REGISTER
             self.register_name = self._token
             self.register_idx = ABI_TO_REGISTER_IDX[self._token]
-        elif self.is_memory_ref():
-            self.type = OPERAND_MEMORY
-            self.mem_reference = MemoryReference(token)
         elif self._token in block_labels:
-            self.type = OPERAND_LABEL
+            self._type = OPERAND_LABEL
             self.target_line = block_labels[self._token]
+        elif self._is_memory_ref():
+            self._type = OPERAND_MEMORY
+            self.mem_reference = MemoryReference(token)
         else:
             print(self._token, block_labels)
-            self.type = OPERAND_CONSTANT
+            self._type = OPERAND_CONSTANT
             self.constant = int(self._token)
 
     def to_string(self):
         return str(self._token)
 
-    # Check if string is a valid ABI register name.
-    def is_valid_register(self, val):
-        register = val.lower()
-        if register in ABI_TO_REGISTER_IDX:
-            return ABI_TO_REGISTER_IDX[register]
-        else:
-            return None
-
-    # Check if int is a valid memory address.
-    def is_valid_memory(self, val):
-        return int(val) >= 0 and int(val) < 4096
-
     # Check if string matches pattern 'offset(base)'.
-    def is_memory_ref(self):
+    def _is_memory_ref(self):
         return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
 
     def is_register(self):
-        return self.type == OPERAND_REGISTER
+        return self._type == OPERAND_REGISTER
 
     def is_memory(self):
-        return self.type == OPERAND_MEMORY
+        return self._type == OPERAND_MEMORY
 
     def is_constant(self):
-        return self.type == OPERAND_CONSTANT
+        return self._type == OPERAND_CONSTANT
+
+    def is_label(self):
+        return self._type == OPERAND_LABEL
 
 
 class RiscvInstr():
