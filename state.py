@@ -49,17 +49,12 @@ class RiscvState():
     def __init__(self, mem_size, stack_size):
         # Need 32 registers + the program counter.
         self.registers = [0 for i in range(33)]
-        # To keep track of taint for each register.
-        self.shadow_registers = [0 for i in range(33)]
 
         self.STACK_SIZE = stack_size
         self.MEM_SIZE = mem_size
 
         # Initialize the list of memory.
         self.memory = [0 for i in range(mem_size)]
-
-        # To keep track of taint for each byte in memory.
-        self.shadow_memory = [0 for i in range(mem_size)]
 
         # Initialize the stack pointer to the end of memory.
         self.set_register('sp', mem_size)
@@ -136,6 +131,7 @@ class RiscvState():
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("Memory write out of bounds")
         self.memory[location] = val
+
 
     # Pickles the state in its current form.
     def pickle_current_state(self, fileheader, pickle_jar):
