@@ -5,7 +5,7 @@ from execution import *
 from instruction import *
 from parser import RiscvParser
 from state import RiscvState
-from taint import ValueTaint, TaintPolicy
+from taint import ValueTaint, TaintPolicy, TaintTracker
 
 MEM_SIZE = 4096
 STACK_SIZE = 128
@@ -16,6 +16,7 @@ class RiscvInterpreter():
     """
     def __init__(self, riscv_file):
         self.state = RiscvState(MEM_SIZE, STACK_SIZE)
+        self.tracker = TaintTracker(self.state)
 
         parser = RiscvParser(riscv_file)
         self._instructions = parser.get_instructions()
@@ -51,11 +52,11 @@ class RiscvInterpreter():
         return
 
 
-    def _run_one(self, state, instr):
+    def _run_one(self, instr):
         """
         Run a single instruction.
         """
-        result = instr.execute(self.state)
+        result = instr.execute(self.state, self.tracker)
 
         # Just executed a jump or call instruction.
         if result and result != 1:
@@ -88,7 +89,7 @@ class RiscvInterpreter():
         # logging
         print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
 
-        return self._run_one(self.state, instr)
+        return self._run_one(instr)
 
 
 def main():

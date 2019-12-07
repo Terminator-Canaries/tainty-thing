@@ -246,8 +246,10 @@ class RiscvInstr():
 
         return jump_val
 
-    def execute(self, state):
+    def execute(self, state, tracker):
         no_jump = 1
+        tracker.taint_by_operand(state, self.opcode, self.operands)
+
         if self.opcode == "addi" or self.opcode == "add":
             self.execute_addi(state)
         elif self.opcode == "subi" or self.opcode == "sub":
