@@ -12,11 +12,21 @@ OPERAND_CONSTANT = 3
 OPERAND_LABEL = 4
 OPERAND_CALL_FUNCTION = 5
 
+# Taint Flags
+# If flags change, edit function tracker.get_taint_as_string().
+TAINT_LOC = 0x1
+TAINT_UID = 0x10
+TAINT_NAME = 0x100
+TAINT_FACE = 0x1000
+TAINT_PASSWORD = 0x10000
+TAINT_OTHER = 0x100000
+
 SUPPORTED_FUNCTIONS = {
-        'get_user_location': 0,
-        'get_uid': 1,
-        'get_password': 2,
-        'get_live_audio': 3
+        'get_user_location': TAINT_LOC,
+        'get_uid': TAINT_UID,
+        'get_user_name': TAINT_NAME,
+        'get_face': TAINT_FACE,
+        'get_password': TAINT_PASSWORD
 }
 
 class InsufficientOperands(Exception):
