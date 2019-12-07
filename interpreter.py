@@ -89,7 +89,9 @@ class RiscvInterpreter():
         # logging
         print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
 
-        return self._run_one(instr)
+        ran = self._run_one(instr)
+        self.tracker.print_registers_taint()
+        return ran
 
 
 def main():
@@ -116,6 +118,8 @@ def main():
 
     # Return value is stored in 'a0'.
     print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
+    interpreter.tracker.print_registers_taint()
+
     return 0
 
 
