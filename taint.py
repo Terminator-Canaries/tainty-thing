@@ -1,32 +1,11 @@
 """
-instruction.py
+taint.py
 
 Defines object representations necessary to track and propagate taint.
 """
 
 from state import ABI_TO_REGISTER_IDX
 from instruction import SUPPORTED_FUNCTIONS, TAINT_LOC, TAINT_UID, TAINT_NAME, TAINT_FACE, TAINT_PASSWORD, TAINT_OTHER
-
-class ValueTaint():
-    """
-    Represents the combination of a value and its taint.
-    """
-    def __init__(self, value, taint):
-        self.value = value
-        self.taint = taint
-
-    def get_value(self):
-        return self.value
-
-    def get_taint(self):
-        return self.taint
-
-    def add_taint(self, taint):
-        self.taint |= taint
-
-    def remove_taint(self, taint):
-        self.taint ^= taint
-
 
 # Defines rules for taint propagation.
 class TaintPolicy():
@@ -45,7 +24,6 @@ class TaintPolicy():
     def propagate_taint(self, instr):
         self.num_tainted_instructions_run += 1
         # TODO: implement taint propagation
-
 
 
 class TaintTracker():
