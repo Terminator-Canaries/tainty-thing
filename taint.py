@@ -79,6 +79,9 @@ class TaintTracker():
 
     # Pretty print the taint mask.
     def print_taint(self, taint):
+        if taint == 0:
+            return "CLEAN"
+
         taint_string = ""
         if (taint & TAINT_LOC):
             taint_string += "|TAINT_LOC"
@@ -233,18 +236,18 @@ class TaintTracker():
             raise InsufficientOperands()
 
         # Return address is stored in 'ra'.
-        self.replace_register_taint('a0', self.taint_source)
+        if self.taint_source != 0:
+            self.replace_register_taint('a0', self.taint_source)
         self.taint_source = 0
-
         return
 
     # sw    op0, op1(op2)
-    # val(op2 + op1) = op0
+    # val(op2 + op1) <- op0
     def taint_sw(self, opcode, operands):
         if len(operands) < 2:
             raise InsufficientOperands()
-        taint1 = self.get_operand_taint(operands[1])
-        self.replace_operand_taint(operands[0], taint1)
+        taint1 = self.get_operand_taint(operands[0])
+        self.replace_operand_taint(operands[1], taint1)
 
     # call   op0
     # taint function op0
@@ -288,6 +291,20 @@ class TaintTracker():
             return self.taint_sw(opcode, operands)
         else:
             raise Exception("Taint opcode '{}' not handled.".format(opcode))
+
+    def print_registers_taint(self):
+        print("PRINTING REGISTER TAINT")
+
+        # Shadow state for taint tracking.
+        for reg, idx in ABI_TO_REGISTER_IDX.items():
+            print("'{}' taint = {}".format(reg, self.print_taint(self.shadow_registers[idx])))
+        return
+
+    def print_memory_taint(self):
+        # Shadow state for taint tracking.
+        for idx in range(len(self.shadow_memory)):
+            print("mem {}: taint = {}".format(idx, self.print_taint(self.shadow_memory[idx])))
+        return
 
 
 
