@@ -3,8 +3,6 @@ state.py
 
 """
 
-import pickle
-
 ABI_TO_REGISTER_IDX = {
         'zero': 0,
         'ra': 1,
@@ -132,18 +130,6 @@ class RiscvState():
             raise Exception("Memory write out of bounds")
         self.memory[location] = val
 
-
-    # Pickles the state in its current form.
-    def pickle_current_state(self, fileheader, pickle_jar):
-        pc = self.get_register('pc')
-        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "wb")
-        pickle.dump(self, filename)
-        return
-
-    def load_pickled_state(self, fileheader, pc, pickle_jar):
-        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "rb")
-        load_state = pickle.load(filename)
-        return load_state
 
 
 

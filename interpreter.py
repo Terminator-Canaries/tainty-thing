@@ -4,6 +4,7 @@ import sys
 import os
 from instruction import *
 from parser import RiscvParser
+import pickle
 from state import RiscvState
 from taint import TaintPolicy, TaintTracker
 import shutil
@@ -95,15 +96,15 @@ class RiscvInterpreter():
 
     # Pickles the state in its current form.
     def pickle_current_state(self, fileheader, pickle_jar):
-        pc = self.get_register('pc')
-        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "wb")
+        pc = self.state.get_register('pc')
+        filename = open("{}/pickles/{}-instr{:03d}-line{:03d}".format(pickle_jar, fileheader, self.pickle_count, pc), 'wb')
+        self.pickle_count += 1
         pickle.dump(self, filename)
         return
 
-    def load_pickled_state(self, fileheader, pc, pickle_jar):
-        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "rb")
-        load_state = pickle.load(filename)
-        return load_state
+    def load_pickled_state(self, pickle_jar, fileheader, pickle_num, pc):
+        file = open("{}/pickles/{}-instr{}-line{}".format(pickle_jar, fileheader, pickle_num, pc), 'rb')
+        return pickle.load(file)
 
 def main():
     if len(sys.argv) < 2:
@@ -128,6 +129,9 @@ def main():
     if os.path.isdir(pickle_jar):
         shutil.rmtree(pickle_jar)
     os.mkdir(pickle_jar)
+    os.mkdir("{}/pickles".format(pickle_jar))
+    os.mkdir("{}/data".format(pickle_jar))
+
 
     # TODO: handle arguments
     # TODO: implement program_args as single input file
@@ -140,7 +144,7 @@ def main():
     # Interpreter loop with taint tracking.
     while(interpreter.run()):
         policy.num_total_instr_run += 1
-        interpreter.state.pickle_current_state("state", pickle_jar)
+        interpreter.pickle_current_state("state", pickle_jar)
 
     # Return value is stored in 'a0'.
     print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
