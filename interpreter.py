@@ -121,11 +121,6 @@ def main():
         shutil.rmtree(pickle_jar)
     os.mkdir(pickle_jar)
 
-    if not os.path.isdir(pickle_jar):
-        print("Pickle folder provided '{}' is not a valid directory"
-              .format(pickle_jar))
-        sys.exit(1)
-
     # TODO: handle arguments
     # TODO: implement program_args as single input file
     # program_args = sys.argv[min_args:]
