@@ -270,5 +270,5 @@ class RiscvInstr():
         elif self.opcode == "sw":
             self.execute_sw(state)
         else:
-            return None
+            raise Exception("Execute operand not handled.")
         return no_jump
