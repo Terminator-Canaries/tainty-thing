@@ -7,9 +7,11 @@ from instruction import *
 from parser import RiscvParser
 from state import RiscvState
 from taint import ValueTaint, TaintPolicy, TaintTracker
+import shutil
 
 MEM_SIZE = 4096
 STACK_SIZE = 128
+PICKLE_CABINET = "pickle_cabinet"
 
 class RiscvInterpreter():
     """
@@ -96,9 +98,8 @@ class RiscvInterpreter():
 
 
 def main():
-    min_args = 3
-    if len(sys.argv) < min_args:
-        print("Usage: {} <riscv_file> <pickle_jar> <program_args>"
+    if len(sys.argv) < 2:
+        print("Usage: {} <riscv_file> <program_args>"
               .format(sys.argv[0]))
         sys.exit(1)
     print("sys.argv[1]: {}".format(sys.argv))
@@ -108,7 +109,18 @@ def main():
         print("'{}' is not a RISC-V assembly file".format(riscv_file))
         sys.exit(1)
 
-    pickle_jar = sys.argv[2]
+    # Create root pickles folder if it doesn't already exist
+    if not os.path.isdir(PICKLE_CABINET):
+        os.mkdir(PICKLE_CABINET)
+
+    # Create file specific pickle folder if it doesn't already exist
+    # Or clear old old pickle folder
+    filename = riscv_file.split('.')[0].replace("/", "_")
+    pickle_jar = "{}/jar_{}".format(PICKLE_CABINET, filename)
+    if os.path.isdir(pickle_jar):
+        shutil.rmtree(pickle_jar)
+    os.mkdir(pickle_jar)
+
     if not os.path.isdir(pickle_jar):
         print("Pickle folder provided '{}' is not a valid directory"
               .format(pickle_jar))
