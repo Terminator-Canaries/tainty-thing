@@ -34,22 +34,6 @@ class ValueTaint():
     def remove_taint(self, taint):
         self.taint ^= taint
 
-    def print_taint(self, taint):
-        taint_string = ""
-        if (taint & TAINT_LOC):
-            taint_string += "|TAINT_LOC"
-        if (taint & TAINT_ID):
-            taint_string += "|TAINT_ID"
-        if (taint & TAINT_NAME):
-            taint_string += "|TAINT_NAME"
-        if (taint & TAINT_FACE):
-            taint_string += "|TAINT_FACE"
-        if (taint & TAINT_PASSWORD):
-            taint_string += "|TAINT_PASSWORD"
-        if (taint & TAINT_OTHER):
-            taint_string += "|TAINT_OTHER"
-        return taint_string[1:]
-
 
 # Defines rules for taint propagation.
 class TaintPolicy():
@@ -76,6 +60,7 @@ class TaintTracker():
         # Physical limits.
         self.STACK_SIZE = state.STACK_SIZE
         self.MEM_SIZE = state.MEM_SIZE
+        self.state = state
 
         # Taint stats.
         self.taint_level = 0
@@ -95,12 +80,33 @@ class TaintTracker():
         else:
             raise Exception("Invalid reg {}".format(reg))
 
+    # Pretty print the taint mask.
+    def print_taint(self, taint):
+        taint_string = ""
+        if (taint & TAINT_LOC):
+            taint_string += "|TAINT_LOC"
+        if (taint & TAINT_ID):
+            taint_string += "|TAINT_ID"
+        if (taint & TAINT_NAME):
+            taint_string += "|TAINT_NAME"
+        if (taint & TAINT_FACE):
+            taint_string += "|TAINT_FACE"
+        if (taint & TAINT_PASSWORD):
+            taint_string += "|TAINT_PASSWORD"
+        if (taint & TAINT_OTHER):
+            taint_string += "|TAINT_OTHER"
+        return taint_string[1:]
+
+    # Return the logic OR of two taint masks.
+    def combine_taint(self, taint1, taint2):
+        return taint1 | taint2
+
     def get_memory_taint(self, location):
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("Memory read out of bounds")
         return self.shadow_memory[location]
 
-    def set_memory_taint(self, location, taint):
+    def replace_memory_taint(self, location, taint):
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("Memory write out of bounds")
         self.shadow_memory[location] = taint
@@ -108,8 +114,7 @@ class TaintTracker():
     def add_memory_taint(self, location, taint):
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("Memory write out of bounds")
-        self.shadow_memory[location] = taint | self.shadow_memory[location]
-
+        self.shadow_memory[location] = self.combine_taint(taint, self.shadow_memory[location])
 
     def get_register_taint(self, reg):
         idx = self.get_reg_idx(reg)
@@ -118,7 +123,7 @@ class TaintTracker():
         else:
             raise Exception("Attempt to read invalid register")
 
-    def set_register_taint(self, reg, taint):
+    def replace_register_taint(self, reg, taint):
         idx = self.get_reg_idx(reg)
         if idx >= 0 and idx <= 32:
             self.registers[idx] = taint
@@ -128,7 +133,7 @@ class TaintTracker():
     def add_register_taint(self, reg, taint):
         idx = self.get_reg_idx(reg)
         if idx >= 0 and idx <= 32:
-            self.registers[idx] = taint | self.registers[idx]
+            self.registers[idx] = self.combine_taint(taint, self.registers[idx])
         else:
             raise Exception("Attempt to write to invalid register")
 
@@ -153,121 +158,92 @@ class TaintTracker():
     # Add taint to the operand's taint mask. 
     def add_operand_taint(self, operand, taint):
         if operand.is_register():
-            self.set_register_taint(operand.register_idx, taint)
+            self.replace_register_taint(operand.register_idx, taint)
         elif operand.is_memory():
             base = ABI_TO_REGISTER_IDX[operand.mem_reference.get_base()]
             offset = int(operand.mem_reference.get_offset())
             mem_location = state.get_register(base) + offset
-            self.set_memory_taint(mem_location, taint)
+            self.add_memory_taint(mem_location, taint)
         else:
             raise Exception("Instruction operand not register or memory")
 
     # Replaces the operand's taint mask with 'taint'.
     def replace_operand_taint(self, operand, taint):
         if operand.is_register():
-            self.set_register(operand.register_idx, update_val)
+            self.replace_register_taint(operand.register_idx, taint)
         elif operand.is_memory():
             base = ABI_TO_REGISTER_IDX[operand.mem_reference.get_base()]
             offset = int(operand.mem_reference.get_offset())
             mem_location = state.get_register(base) + offset
-
-            self.set_memory(mem_location, update_val)
+            self.replace_memory_taint(mem_location, taint)
         else:
             raise Exception("Instruction operand not register or memory")
-
-    # Return the logic OR of two taint masks.
-    def combine_taint(self, taint1, taint2):
-        return taint1 | taint2
 
     # addi    op0, op1, op2
     # op0 = op1 + sext(op2)
     def taint_addi(self, opcode, operands):
         if len(self.operands) < 3:
             raise InsufficientOperands()
-        # Technically op2 is sign extended but doesn't matter in Python.
         taint1 = self.get_operand_taint(self.operands[1])
         taint2 = self.get_operand_taint(self.operands[2])
-        self.update_taint(self.operands[0], self.combine_taint(taint1, taint2))
+        self.replace_operand_taint(self.operands[0], self.combine_taint(taint1, taint2))
 
     # subi    op0, op1, op2
     # op0 = op1 - sext(op2)
     def taint_subi(self, opcode, operands):
         if len(self.operands) < 3:
             raise InsufficientOperands()
-        # Technically op2 is sign extended but doesn't matter in Python.
-        val1 = state.get_operand_val(self.operands[1])
-        val2 = state.get_operand_val(self.operands[2])
-        update_val = val1 - val2
-        state.update_val(self.operands[0], update_val)
+        taint1 = self.get_operand_taint(self.operands[1])
+        taint2 = self.get_operand_taint(self.operands[2])
+        self.replace_operand_taint(self.operands[0], self.combine_taint(taint1, taint2))
 
     # beq    op0, op1, op2
     # jump to op2 if op0 == op1
     def taint_beq(self, opcode, operands):
-        if len(self.operands) < 3:
-            raise InsufficientOperands()
-        branch_val = (self.operands[2]).get_target_name()
-        pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
-            return branch_val
-        else:
-            return 1  # no_jump
+        # TODO - Jump tainting
+        return
 
     # bne    op0, op1, op2
     # jump to op2 if op0 != op1
     def taint_bne(self, opcode, operands):
-        if len(self.operands) < 3:
-            raise InsufficientOperands()
-        branch_val = (self.operands[2]).get_target_name()
-        pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
-            return branch_val
-        else:
-            return 1  # no_jump
+        # TODO - Jump tainting
+        return
 
     # j    op0
     # jump to op0
     def taint_j(self, opcode, operands):
-        if len(self.operands) < 1:
-            raise InsufficientOperands()
-        jump_val = (self.operands[0]).get_target_name()
-        pc = self.get_jump_target(jump_val)
-        state.set_register('pc', pc)
-        return jump_val
+        # TODO - Jump tainting
+        return
 
     # lui    op0, op1
     # op0 = op1 << 12
     def taint_lui(self, opcode, operands):
         if len(self.operands) < 2:
             raise InsufficientOperands()
-        update_val = state.get_operand_val(self.operands[1]) << 12
-        state.update_val(self.operands[0], update_val)
+        taint1 = self.get_operand_taint(self.operands[1])
+        self.replace_operand_taint(self.operands[0], taint1)
 
     # lw    op0, op1(op2)
     # op0 = val(op2 + op1)
     def taint_lw(self, opcode, operands):
         if len(self.operands) < 2:
             raise InsufficientOperands()
-        mem_reference = self.generate_mem_operand(self.operands[1], state)
-        load_val = state.get_operand_val(mem_reference)
-        state.update_val(self.operands[0], load_val)
+        taint1 = self.get_operand_taint(self.operands[1])
+        self.replace_operand_taint(self.operands[0], taint1)
 
     def taint_ret(self, opcode, operands):
         if len(self.operands) != 0:
             raise InsufficientOperands()
-        # Return address is stored in 'ra'.
-        ra = state.get_register('ra')
-        state.set_register('pc', ra)
+        # TODO - ret tainting.
+        return
 
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
     def taint_sw(self, opcode, operands):
         if len(self.operands) < 2:
             raise InsufficientOperands()
-        mem_reference = self.generate_mem_operand(self.operands[1], state)
-        store_val = state.get_operand_val(self.operands[0])
-        state.update_val(mem_reference, store_val)
+        taint1 = self.get_operand_taint(self.operands[1])
+        self.replace_operand_taint(self.operands[0], taint1)
 
     # call   op0
     # taint function op0
@@ -276,19 +252,14 @@ class TaintTracker():
             raise InsufficientOperands()
         elif len(self.operands) != 1:
             raise Exception("Function args not yet handled.")
-        
-        # Set the return address in 'ra' to 'pc'+1.
-        pc = state.get_register('pc')
-        state.set_register('ra', pc+1)
+        # TODO - call tainting.
+        return 
 
-        # Jump to the function name.
-        jump_val = (self.operands[0]).get_target_name()
-        pc = self.get_jump_target(jump_val)
-        state.set_register('pc', pc)
+    def taint_by_operand(self, state, opcode, operands):
+        # Give the object access to the current state.
+        self.state = state
 
-        return jump_val 
-
-    def taint_by_operand(self, opcode, operands):
+        # Handle the specified operation.
         if opcode == "addi" or opcode == "add":
             return self.taint_addi(opcode, operands)
         elif opcode == "subi" or self.opcode == "sub":
@@ -311,9 +282,6 @@ class TaintTracker():
             return self.taint_sw(opcode, operands)
         else:
             raise Exception("Taint operand not handled.")
-
-
-
 
 
 
