@@ -24,6 +24,9 @@ you can probably fix it by adding `/usr/local/opt/llvm/bin/` to your path:
 
     python interpreter.py riscv_file pickle_jar program_args
 
+Where `riscv_file` is the generated RISC-V assembly file and pickle_jar
+is the folder in which to store the pickles.
+
 ## Files
 
 #### Parsing
