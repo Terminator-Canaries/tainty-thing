@@ -2,11 +2,10 @@
 
 import sys
 import os
-from execution import *
 from instruction import *
 from parser import RiscvParser
 from state import RiscvState
-from taint import ValueTaint, TaintPolicy, TaintTracker
+from taint import TaintPolicy, TaintTracker
 import shutil
 
 MEM_SIZE = 4096
@@ -92,10 +91,19 @@ class RiscvInterpreter():
         # logging
         print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
 
-        ran = self._run_one(instr)
-        self.tracker.print_registers_taint()
-        return ran
+        return self._run_one(instr)
 
+    # Pickles the state in its current form.
+    def pickle_current_state(self, fileheader, pickle_jar):
+        pc = self.get_register('pc')
+        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "wb")
+        pickle.dump(self, filename)
+        return
+
+    def load_pickled_state(self, fileheader, pc, pickle_jar):
+        filename = open("{}/{}{}".format(pickle_jar, fileheader, pc), "rb")
+        load_state = pickle.load(filename)
+        return load_state
 
 def main():
     if len(sys.argv) < 2:
