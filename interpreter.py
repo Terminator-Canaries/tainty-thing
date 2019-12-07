@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 from execution import *
 from instruction import *
 from parser import RiscvParser
@@ -31,9 +32,9 @@ class RiscvInterpreter():
 
         # Current block changes at every jump, call, and return.
         self.current_block = "main"
-        
+
         # Function changes only during calls and returns.
-        self.current_function = "main"  
+        self.current_function = "main"
 
         # Set pc to start at 'main'.
         self.state.set_register('pc', self.block_labels["main"])
@@ -67,8 +68,8 @@ class RiscvInterpreter():
         # Just executed a return.
         elif result == 0:
             if self.current_function == "main":
-                # Returning from main, so terminate the program. 
-                return False  
+                # Returning from main, so terminate the program.
+                return False
 
             # Else, update the current_function and block data.
             self.set_corresponding_block()
@@ -85,7 +86,7 @@ class RiscvInterpreter():
     def run(self):
         pc = self.state.get_register('pc')
         instr = self._instructions[pc]
-        
+
         # logging
         print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
 
@@ -95,11 +96,21 @@ class RiscvInterpreter():
 def main():
     min_args = 3
     if len(sys.argv) < min_args:
-        print('Usage: {} <riscv_file> <pickle_jar> <program_args>'.format(sys.argv[0]))
+        print("Usage: {} <riscv_file> <pickle_jar> <program_args>"
+              .format(sys.argv[0]))
         sys.exit(1)
     print("sys.argv[1]: {}".format(sys.argv))
+
     riscv_file = sys.argv[1]
+    if not os.path.isfile(riscv_file) or riscv_file.split('.')[1] != 's':
+        print("'{}' is not a RISC-V assembly file".format(riscv_file))
+        sys.exit(1)
+
     pickle_jar = sys.argv[2]
+    if not os.path.isdir(pickle_jar):
+        print("Pickle folder provided '{}' is not a valid directory"
+              .format(pickle_jar))
+        sys.exit(1)
 
     # TODO: handle arguments
     # TODO: implement program_args as single input file
