@@ -2,13 +2,13 @@
 
 ## Setup on OSX
 
-1. Install llvm:
+#### Install llvm:
 
         brew install llvm
 
-2. Install Python 3.6 or higher
+#### Install Python 3.6 or higher
 
-3. Optionally isolate your python environment with a tool like `virtualenv`:
+#### Optionally isolate your python environment with a tool like `virtualenv`:
 
     * Install: `pip install virtualenv`
 
@@ -18,7 +18,7 @@
 
     * Deactivate: `deactivate`
 
-4. Install python dependencies:
+#### Install python dependencies:
 
     `pip install -r requirements.txt`
 
