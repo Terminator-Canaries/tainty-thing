@@ -252,15 +252,16 @@ class RiscvInstr:
     # jump to (op1 + op2) with last bit 0
     # set op0 to address following the jump (%pc + 4)
     def execute_jalr(self, state):
+        # if jump_val == -1, stop
         if len(self.operands) != 3:
             raise InsufficientOperands()
         tmp = state.get_register("pc") + 1
         # %pc = (op1 + op2) & 0xFFFFFFFE
         v1 = state.get_operand_val(self.operands[1])
-        print("Ret ra val is {}",v1)
+        print("Ret ra val is {}", v1)
         v2 = state.get_operand_val(self.operands[2])
-        print("Ret operands are {}",[s.to_string() for s in self.operands])
-        jump_val = (v1 + v2)
+        print("Ret operands are {}", [s.to_string() for s in self.operands])
+        jump_val = v1 + v2
         state.set_register("pc", jump_val)
         # %rd = (prior %pc + 4)
         state.set_register(self.operands[0]._token, tmp)
@@ -270,17 +271,15 @@ class RiscvInstr:
             print("Ret got {} operands".format([s.to_string() for s in self.operands]))
             raise InsufficientOperands()
         # ret is just a pseudoinstruction for
-        # jalr zero, ra, 0
-        self.operands.extend(
-            [
-                RiscvOperand("zero", self._block_labels),
-                RiscvOperand("ra", self._block_labels),
-                RiscvOperand("zero", self._block_labels),
-            ]
-        )
+        # jalr zero, ra, zero
+        self.opcode = "jalr"
+        self.operands = [
+            RiscvOperand("zero", self._block_labels),
+            RiscvOperand("ra", self._block_labels),
+            RiscvOperand("zero", self._block_labels),
+        ]
         self.execute_jalr(state)
         # hack to deal w/ rerunning the same instruction multiple times
-        self.operands = []
 
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
