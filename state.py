@@ -2,6 +2,7 @@
 state.py
 
 """
+import time
 
 ABI_TO_REGISTER_IDX = {
         'zero': 0,
@@ -116,6 +117,9 @@ class RiscvState():
     def set_register(self, reg, val):
         idx = self.get_reg_idx(reg)
         if idx > 0 and idx <= 32:
+            if idx == 1:
+                print("### Updating RA to ", val)
+                time.sleep(1)
             self.registers[idx] = val
         elif idx == 0:
             return

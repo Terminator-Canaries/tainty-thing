@@ -264,7 +264,6 @@ class RiscvInstr:
         state.set_register("pc", jump_val)
         # %rd = (prior %pc + 4)
         state.set_register(self.operands[0]._token, tmp)
-        return
 
     def execute_ret(self, state):
         if len(self.operands) != 0:
