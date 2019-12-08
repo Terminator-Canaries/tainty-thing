@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from instruction import SUPPORTED_FUNCTIONS
 
-## BEGIN HANDLERS ##
-# a taint handler is function of arguments (tracker, state, operands)
-# where tracker is the instantiated taint tracker, state is the execution state and operands
-# is the operands to the operation
+## TAINT POLICY HANDLERS ##
+# A taint handler is function of arguments (tracker, state, operands).
+#   tracker: instantiated taint tracker
+#   state: execution state
+#   operands: operands to the operation
 
 
 # addi    op0, op1, op2
@@ -20,14 +21,6 @@ def taint_addi(tracker, state, operands):
 def taint_sw(tracker, state, operands):
     taint1 = tracker.get_operand_taint(operands[0])
     tracker.replace_operand_taint(operands[1], taint1)
-
-
-# addi    op0, op1, op2
-# op0 = op1 + sext(op2)
-def taint_addi(tracker, state, operands):
-    taint1 = tracker.get_operand_taint(operands[1])
-    taint2 = tracker.get_operand_taint(operands[2])
-    tracker.replace_operand_taint(operands[0], tracker.OR(taint1, taint2))
 
 
 # subi    op0, op1, op2
@@ -63,7 +56,7 @@ def taint_j(tracker, state, operands):
 # op0 = op1 << 12
 def taint_lui(tracker, state, operands):
     taint1 = tracker.get_operand_taint(operands[1])
-    self.replace_operand_taint(operands[0], taint1)
+    tracker.replace_operand_taint(operands[0], taint1)
 
 
 # lw    op0, op1(op2)
@@ -116,8 +109,8 @@ def taint_lw(tracker, state, operands):
     return
 
 
-## BEGIN POLICY ##
-# A policy is a mapping of instruction string labels to their handlers
+## TAINT POLICY ##
+# A policy is a mapping of instruction string labels to their handlers.
 policy = {
     "addi": taint_addi,
     "add": taint_addi,
@@ -130,4 +123,5 @@ policy = {
     "bne": thunk,
     "beq": thunk,
     "j": thunk,
+    "jalr": thunk
 }

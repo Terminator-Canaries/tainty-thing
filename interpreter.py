@@ -38,6 +38,8 @@ class RiscvInterpreter():
 
         # Set pc to start at 'main'.
         self.state.set_register('pc', self.block_labels["main"])
+        # To help detect when the final return is executed.
+        self.state.set_register('ra', -1)
 
     def get_state(self):
         return self.state
@@ -45,69 +47,57 @@ class RiscvInterpreter():
     def get_tracker(self):
         return self.tracker
 
-    # Set the block containing the instruction pointer.
     def set_corresponding_block(self):
         pc = self.state.get_register('pc')
-        block_name, block_val = None, 0
+        prev_val = 0
+        # Find the block containing the instruction pointer.
         for key, val in self.block_labels.items():
-            if block_val <= pc and val <= pc:
+            if prev_val <= pc and pc <= val:
                 block_name = key
-                block_val = val
-
+            prev_val = val
         self.current_block = block_name
         self.current_function = block_name
-        return
 
     def _run_one(self, instr):
-        """
-        Run a single instruction.
-        """
+        # Run a single instruction.
         result = instr.execute(self.state, self.tracker)
 
-        # Just executed a jump or call instruction.
-        if result and result != 1:
-            self.current_block = result
-            if instr.opcode == "call":
-                self.current_function = result
-            return True
-        # Just executed a return.
-        elif result == 0:
-            if self.current_function == "main":
-                # Returning from main, so terminate the program.
-                return False
-
-            # Else, update the current_function and block data.
-            self.set_corresponding_block()
-            return True
-        elif not result:
+        if result != 0 and not result:
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
-
         else:
-            pc = self.state.get_register('pc')
-            self.state.set_register('pc', pc+1)
-            return True
+            # Final return in the program.
+            if result == -1:
+                return False
+            # Return.
+            elif result == 0:
+                self.set_corresponding_block()
+                return True
+            # Non-jump instruction.
+            elif result == 1:
+                pc = self.state.get_register('pc')
+                self.state.set_register('pc', pc+1)
+                return True
+            # Jump or call instruction.
+            else:
+                self.current_block = result
+                if instr.opcode == "call":
+                    self.current_function = result
+                return True
 
     def run(self):
         pc = self.state.get_register('pc')
         instr = self._instructions[pc]
 
-        # logging
         print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
-
         return self._run_one(instr)
 
-    # Pickles the state in its current form.
     def pickle_current_state(self, fileheader, pickle_jar):
         pc = self.state.get_register('pc')
-
-
         file = open("{}/pickles/{}-instr{:03d}-line{:03d}".format(pickle_jar,
-                                        fileheader, self.pickle_count, pc), 'wb')
-
+                    fileheader, self.pickle_count, pc), 'wb')
         self.pickle_count += 1
         pickle.dump(self, file)
-        return
 
     def load_pickled_state(self, pickle_jar, fileheader, pickle_num, pc):
         file = open("{}/pickles/{}-instr{}-line{}".format(pickle_jar, fileheader, pickle_num, pc), 'rb')
@@ -118,19 +108,17 @@ def main():
         print("Usage: {} <riscv_file> <program_args>"
               .format(sys.argv[0]))
         sys.exit(1)
-    print("sys.argv[1]: {}".format(sys.argv))
 
     riscv_file = sys.argv[1]
     if not os.path.isfile(riscv_file) or riscv_file.split('.')[1] != 's':
         print("'{}' is not a RISC-V assembly file".format(riscv_file))
         sys.exit(1)
 
-    # Create root pickles folder if it doesn't already exist
+    # Create root pickles folder if it doesn't already exist.
     if not os.path.isdir(PICKLE_CABINET):
         os.mkdir(PICKLE_CABINET)
 
-    # Create file specific pickle folder if it doesn't already exist
-    # Or clear old old pickle folder
+    # Create file specific pickle folder if it doesn't already exist or clears old old pickle folder.
     filename = riscv_file.split('.')[0].replace("/", "_")
     pickle_jar = "{}/jar_{}".format(PICKLE_CABINET, filename)
     if os.path.isdir(pickle_jar):
@@ -143,15 +131,17 @@ def main():
     # TODO: implement program_args as single input file
     # program_args = sys.argv[min_args:]
 
+
+    print("\nBEGINNING EXECUTION...")
     interpreter = RiscvInterpreter(riscv_file, policy_from_disk)
 
-    print("hi")
     # Interpreter loop with taint tracking.
     while(interpreter.run()):
         interpreter.pickle_current_state("state", pickle_jar)
 
     # Return value is stored in 'a0'.
     print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
+    print("\nEXECUTION FINISHED!\n\n####################")
     interpreter.tracker.print_registers_taint()
 
     return 0
