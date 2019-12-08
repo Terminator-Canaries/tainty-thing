@@ -5,6 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.s
 
 # Distribution / packaging
 .Python
@@ -104,5 +105,8 @@ venv.bak/
 .mypy_cache/
 
 # LLVM
-.bc
-.ll
+*.bc
+*.ll
+
+# pickles
+pickle_cabinet/
