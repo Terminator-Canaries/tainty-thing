@@ -87,8 +87,6 @@ def taint_call(tracker, state, operands):
     function_name = operands[0].get_target_name()
     if function_name in SUPPORTED_FUNCTIONS:
         tracker.taint_source = SUPPORTED_FUNCTIONS[function_name]
-    else:
-        raise Exception("Function {} not taint call supported.".format(function_name))
     return
 
 
@@ -133,18 +131,3 @@ policy = {
     "beq": thunk,
     "j": thunk,
 }
-
-# # Handle the specified operation.
-# elif opcode == "subi" or opcode == "sub":
-#     return self.taint_subi(opcode, operands)
-# elif opcode == "beq":
-#     return self.taint_beq(opcode, operands)
-# elif opcode == "bne":
-#     return self.taint_bne(opcode, operands)
-# elif opcode == "j":
-#     return self.taint_j(opcode, operands)
-# elif opcode == "lui":
-#     return self.taint_lui(opcode, operands)
-# elif opcode == "lw":
-#     return self.taint_lw(opcode, operands)
-# else:

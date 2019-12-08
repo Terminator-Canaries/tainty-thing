@@ -145,6 +145,7 @@ def main():
 
     interpreter = RiscvInterpreter(riscv_file, policy_from_disk)
 
+    print("hi")
     # Interpreter loop with taint tracking.
     while(interpreter.run()):
         interpreter.pickle_current_state("state", pickle_jar)

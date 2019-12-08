@@ -115,8 +115,10 @@ class RiscvState():
 
     def set_register(self, reg, val):
         idx = self.get_reg_idx(reg)
-        if idx >= 0 and idx <= 32:
+        if idx > 0 and idx <= 32:
             self.registers[idx] = val
+        elif idx == 0:
+            return
         else:
             raise Exception("Attempt to write to invalid register")
 
