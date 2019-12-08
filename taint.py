@@ -164,42 +164,7 @@ class TaintTracker:
             raise Exception("Instruction operand not register or memory")
 
     def taint_by_operand(self, state, opcode, operands):
-<<<<<<< HEAD
-        # Give the object access to the current state.
-        self.state = state
-        policy[opcode](operands)
-        # {'sw': taint_sw}
-        # {'addi': function(operands,taintstate,state){ 
-        #   if pc == 15 {taintstate[op1] |= taintstate[op2]
-        #  }}
-        # lines 10 - 15, use instrpolicy a
-        # otherwise use b
-        # taintpolicy.state.functionlist = ["a","b"]
-        # Handle the specified operation.
-        if opcode == "addi" or opcode == "add":
-            return self.taint_addi(opcode, operands)
-        elif opcode == "subi" or opcode == "sub":
-            return self.taint_subi(opcode, operands)
-        elif opcode == "beq":
-            return self.taint_beq(opcode, operands)
-        elif opcode == "bne":
-            return self.taint_bne(opcode, operands)
-        elif opcode == "call":
-            return self.taint_call(opcode, operands)
-        elif opcode == "j":
-            return self.taint_j(opcode, operands)
-        elif opcode == "lui":
-            return self.taint_lui(opcode, operands)
-        elif opcode == "lw":
-            return self.taint_lw(opcode, operands)
-        elif opcode == "ret":
-            return self.taint_ret(opcode, operands)
-        elif opcode == "sw":
-            return self.taint_sw(opcode, operands)
-        else:
-=======
         if opcode not in self.policy:
->>>>>>> 79492d6d6c46076b0563956b1d79613008d3d894
             raise Exception("Taint opcode '{}' not handled.".format(opcode))
         self.policy[opcode](self, state, operands)
 
@@ -224,7 +189,6 @@ class TaintTracker:
                 )
             )
         return
-<<<<<<< HEAD
 
     def percentage_tainted_registers(self):
         num_tainted = sum([min(1, taint) for taint in self.shadow_registers])
@@ -233,11 +197,3 @@ class TaintTracker:
     def percentage_tainted_memory(self):
         num_tainted = sum([min(1, taint) for taint in self.shadow_memory])
         return num_tainted / len(self.shadow_memory)
-
-
-
-
-
-
-=======
->>>>>>> 79492d6d6c46076b0563956b1d79613008d3d894
