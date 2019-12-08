@@ -16,15 +16,6 @@ class TaintPolicy():
         self.num_tainted_instr_run = 0
         self.time_in_taint_mode = 0
 
-    # True iff tokens are tainted.
-    def tainted_args(self, instr):
-        # TODO: implement taint checking
-        pass
-
-    def propagate_taint(self, instr):
-        self.num_tainted_instructions_run += 1
-        # TODO: implement taint propagation
-
 
 class TaintTracker():
     def __init__(self, state):
@@ -245,7 +236,14 @@ class TaintTracker():
     def taint_by_operand(self, state, opcode, operands):
         # Give the object access to the current state.
         self.state = state
-
+        policy[opcode](operands)
+        # {'sw': taint_sw}
+        # {'addi': function(operands,taintstate,state){ 
+        #   if pc == 15 {taintstate[op1] |= taintstate[op2]
+        #  }}
+        # lines 10 - 15, use instrpolicy a
+        # otherwise use b
+        # taintpolicy.state.functionlist = ["a","b"]
         # Handle the specified operation.
         if opcode == "addi" or opcode == "add":
             return self.taint_addi(opcode, operands)
@@ -283,6 +281,14 @@ class TaintTracker():
         for idx in range(len(self.shadow_memory)):
             print("mem {}: taint = {}".format(idx, self.print_taint(self.shadow_memory[idx])))
         return
+
+    def percentage_tainted_registers(self):
+        num_tainted = sum([min(1, taint) for taint in self.shadow_registers])
+        return num_tainted / len(self.shadow_registers)
+
+    def percentage_tainted_memory(self):
+        num_tainted = sum([min(1, taint) for taint in self.shadow_memory])
+        return num_tainted / len(self.shadow_memory)
 
 
 

@@ -8,6 +8,7 @@ import pickle
 from state import RiscvState
 from taint import TaintPolicy, TaintTracker
 import shutil
+from analyze import Analyzer
 
 MEM_SIZE = 4096
 STACK_SIZE = 128
@@ -25,8 +26,7 @@ class RiscvInterpreter():
         self._instructions = parser.get_instructions()
         self.block_labels = parser.get_labels()
 
-        # Snapshots of state created for each instruction.
-        self.pickles = []
+        # Number of pickles created thus far.
         self.pickle_count = 0
 
         # Need to add instruction policy argument.
@@ -41,7 +41,13 @@ class RiscvInterpreter():
         # Set pc to start at 'main'.
         self.state.set_register('pc', self.block_labels["main"])
 
-    # Get the block containing the instruction pointer.
+    def get_state(self):
+        return self.state
+
+    def get_tracker(self):
+        return self.tracker
+
+    # Set the block containing the instruction pointer.
     def set_corresponding_block(self):
         pc = self.state.get_register('pc')
         block_name, block_val = None, 0
@@ -53,7 +59,6 @@ class RiscvInterpreter():
         self.current_block = block_name
         self.current_function = block_name
         return
-
 
     def _run_one(self, instr):
         """
@@ -97,9 +102,13 @@ class RiscvInterpreter():
     # Pickles the state in its current form.
     def pickle_current_state(self, fileheader, pickle_jar):
         pc = self.state.get_register('pc')
-        filename = open("{}/pickles/{}-instr{:03d}-line{:03d}".format(pickle_jar, fileheader, self.pickle_count, pc), 'wb')
+
+
+        file = open("{}/pickles/{}-instr{:03d}-line{:03d}".format(pickle_jar,
+                                        fileheader, self.pickle_count, pc), 'wb')
+
         self.pickle_count += 1
-        pickle.dump(self, filename)
+        pickle.dump(self, file)
         return
 
     def load_pickled_state(self, pickle_jar, fileheader, pickle_num, pc):
@@ -131,7 +140,6 @@ def main():
     os.mkdir(pickle_jar)
     os.mkdir("{}/pickles".format(pickle_jar))
     os.mkdir("{}/data".format(pickle_jar))
-
 
     # TODO: handle arguments
     # TODO: implement program_args as single input file
