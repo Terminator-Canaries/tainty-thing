@@ -169,7 +169,7 @@ class TaintTracker:
         self.policy[opcode](self, state, operands)
 
     def print_registers_taint(self):
-        print("PRINTING REGISTER TAINT")
+        print("\nREGISTER TAINT:\n")
 
         # Shadow state for taint tracking.
         for reg, idx in ABI_TO_REGISTER_IDX.items():

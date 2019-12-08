@@ -34,7 +34,6 @@ class InsufficientOperands(Exception):
     """
     Raise when execute_opcode called with insufficent operands.
     """
-
     pass
 
 
@@ -42,7 +41,6 @@ class MemoryReference:
     """
     Necessary so that resolving reference is done only upon excuting.
     """
-
     def __init__(self, token):
         base = token.split("(")[1].strip(")").lower()
         offset = token.split("(")[0]
@@ -65,7 +63,6 @@ class RiscvOperand:
     """
     Represents an abstract righthand side operand.
     """
-
     def __init__(self, token, block_labels):
         self._token = token
         self._offset = 0
@@ -122,7 +119,6 @@ class RiscvInstr:
     """
     Represents a single line of RISC-V binary.
     """
-
     def __init__(self, tokens, block_labels):
         self._tokens = tokens
         self._block_labels = block_labels
@@ -154,6 +150,8 @@ class RiscvInstr:
         mem_reference = RiscvOperand(str(mem_location) + "(zero)", self._block_labels)
         return mem_reference
 
+    ## ARITHMETIC
+
     # addi    op0, op1, op2
     # op0 = op1 + sext(op2)
     def execute_addi(self, state):
@@ -175,6 +173,16 @@ class RiscvInstr:
         val2 = state.get_operand_val(self.operands[2])
         update_val = val1 - val2
         state.update_val(self.operands[0], update_val)
+
+    # lui    op0, op1
+    # op0 = op1 << 12
+    def execute_lui(self, state):
+        if len(self.operands) < 2:
+            raise InsufficientOperands()
+        update_val = state.get_operand_val(self.operands[1]) << 12
+        state.update_val(self.operands[0], update_val)
+
+    ## BRANCHES
 
     # beq    op0, op1, op2
     # jump to op2 if op0 == op1
@@ -221,23 +229,15 @@ class RiscvInstr:
         else:
             return 1  # no_jump
 
-    # j    op0
-    # jump to op0
-    def execute_j(self, state):
-        if len(self.operands) < 1:
-            raise InsufficientOperands()
-        jump_val = (self.operands[0]).get_target_name()
-        pc = self.get_jump_target(jump_val)
-        state.set_register("pc", pc)
-        return jump_val
+    ## MEMORY
 
-    # lui    op0, op1
-    # op0 = op1 << 12
-    def execute_lui(self, state):
-        if len(self.operands) < 2:
-            raise InsufficientOperands()
-        update_val = state.get_operand_val(self.operands[1]) << 12
-        state.update_val(self.operands[0], update_val)
+    # mv    op0, op1
+    # assign op1 to op0
+    def execute_mv(self, state):
+        # mv is a pseudoinstruction for:
+        # addi    arg1, arg2, 0
+        self.operands.append(RiscvOperand("0", self._block_labels))
+        self.execute_addi(state)
 
     # lw    op0, op1(op2)
     # op0 = val(op2 + op1)
@@ -248,39 +248,6 @@ class RiscvInstr:
         load_val = state.get_operand_val(mem_reference)
         state.update_val(self.operands[0], load_val)
 
-    # jalr op0, op1, op2
-    # jump to (op1 + op2) with last bit 0
-    # set op0 to address following the jump (%pc + 4)
-    def execute_jalr(self, state):
-        # if jump_val == -1, stop
-        if len(self.operands) != 3:
-            raise InsufficientOperands()
-        tmp = state.get_register("pc") + 1
-        # %pc = (op1 + op2) & 0xFFFFFFFE
-        v1 = state.get_operand_val(self.operands[1])
-        print("Ret ra val is {}", v1)
-        v2 = state.get_operand_val(self.operands[2])
-        print("Ret operands are {}", [s.to_string() for s in self.operands])
-        jump_val = v1 + v2
-        state.set_register("pc", jump_val)
-        # %rd = (prior %pc + 4)
-        state.set_register(self.operands[0]._token, tmp)
-
-    def execute_ret(self, state):
-        if len(self.operands) != 0:
-            print("Ret got {} operands".format([s.to_string() for s in self.operands]))
-            raise InsufficientOperands()
-        # ret is just a pseudoinstruction for
-        # jalr zero, ra, zero
-        self.opcode = "jalr"
-        self.operands = [
-            RiscvOperand("zero", self._block_labels),
-            RiscvOperand("ra", self._block_labels),
-            RiscvOperand("zero", self._block_labels),
-        ]
-        self.execute_jalr(state)
-        # hack to deal w/ rerunning the same instruction multiple times
-
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
     def execute_sw(self, state):
@@ -290,56 +257,96 @@ class RiscvInstr:
         store_val = state.get_operand_val(self.operands[0])
         state.update_val(mem_reference, store_val)
 
+    ## CALL, JUMPS, RET
+
     # call   op0
     # execute function op0
     def execute_call(self, state):
         if len(self.operands) < 1:
             raise InsufficientOperands()
         elif len(self.operands) != 1:
-            raise Exception("Function args not yet handled.")
-
-        # Set the return address in 'ra' to 'pc'+1.
+            raise Exception("Function args not yet handled")
+        # Set the return address to one after the current line.
         pc = state.get_register("pc")
-        print("PC is ", pc)
-        new_ra = pc + 1
-        state.set_register("ra", new_ra)
+        print("\n### Current PC is ", pc)
+        state.set_register("ra", pc+1)
         # Jump to the function name.
         jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
         state.set_register("pc", pc)
         return jump_val
 
+    # j    op0
+    # jump to op0
+    def execute_j(self, state):
+        if len(self.operands) < 1:
+            raise InsufficientOperands()
+        jump_val = (self.operands[0]).get_target_name()
+        pc = self.get_jump_target(jump_val)
+        state.set_register("pc", pc)
+        return jump_val
+
+    # jalr    op0, op1, op2
+    # jump to (op1 + op2) with last bit 0
+    # set op0 to address following the jump (%pc + 4)
+    def execute_jalr(self, state):
+        if len(self.operands) != 3:
+            raise InsufficientOperands()
+        pc = state.get_register("pc")
+        # %pc = (op1 + op2) & 0xFFFFFFFE
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        jump_val = val1 + val2
+        state.set_register("pc", jump_val)
+        # %rd = (prior %pc + 4)
+        state.set_register(self.operands[0].to_string(), pc+1)
+        return jump_val
+
+    def execute_ret(self, state):
+        if len(self.operands) != 0:
+            print("Ret got {} operands".format([s.to_string() for s in self.operands]))
+            raise InsufficientOperands()
+        # ret is a pseudoinstruction for:
+        # jalr    zero, ra, zero
+        self.opcode = "jalr"
+        self.operands = [
+            RiscvOperand("zero", self._block_labels),
+            RiscvOperand("ra", self._block_labels),
+            RiscvOperand("zero", self._block_labels),
+        ]
+        # If return address is -1 then final return was executed.
+        return -1 if self.execute_jalr(state) == -1 else 0
+
     def execute(self, state, tracker):
-        no_jump = 1
+        result = 1
         tracker.taint_by_operand(state, self.opcode, self.operands)
 
         if self.opcode == "addi" or self.opcode == "add":
             self.execute_addi(state)
         elif self.opcode == "subi" or self.opcode == "sub":
             self.execute_subi(state)
+        elif self.opcode == "lui":
+            self.execute_lui(state)
         elif self.opcode == "beq":
             return self.execute_beq(state)
         elif self.opcode == "bne":
             return self.execute_bne(state)
         elif self.opcode == "blt":
             self.execute_blt(state)
+        elif self.opcode == "mv":
+            self.execute_mv(state)
+        elif self.opcode == "lw":
+            self.execute_lw(state)
+        elif self.opcode == "sw":
+            self.execute_sw(state)
         elif self.opcode == "call":
             return self.execute_call(state)
         elif self.opcode == "j":
             return self.execute_j(state)
-        elif self.opcode == "lui":
-            self.execute_lui(state)
-        elif self.opcode == "lw":
-            self.execute_lw(state)
+        elif self.opcode == "jalr":
+            return self.execute_jalr(state)
         elif self.opcode == "ret":
-            self.execute_ret(state)
-            return 0
-        elif self.opcode == "sw":
-            self.execute_sw(state)
-        elif self.opcode == "mv":
-            # mv is a pseudoinstruction for addi arg1, arg2, 0
-            self.operands.append(RiscvOperand("0", self._block_labels))
-            self.execute_addi(state)
+            return self.execute_ret(state)
         else:
             raise Exception("Execute operand {} not handled.".format(self.opcode))
-        return no_jump
+        return result

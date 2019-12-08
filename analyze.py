@@ -69,9 +69,3 @@ def main(pickle_jar, memory_graph, register_graph):
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
