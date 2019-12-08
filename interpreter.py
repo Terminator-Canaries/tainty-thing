@@ -7,8 +7,9 @@ from parser import RiscvParser
 import pickle
 from state import RiscvState
 from taint import TaintPolicy, TaintTracker
+from policy import policy as policy_from_disk
 import shutil
-from analyze import Analyzer
+
 
 MEM_SIZE = 4096
 STACK_SIZE = 128
@@ -18,9 +19,9 @@ class RiscvInterpreter():
     """
     Simulates execution of a RISC-V binary.
     """
-    def __init__(self, riscv_file):
+    def __init__(self, riscv_file, policy):
         self.state = RiscvState(MEM_SIZE, STACK_SIZE)
-        self.tracker = TaintTracker(self.state)
+        self.tracker = TaintTracker(self.state, policy)
 
         parser = RiscvParser(riscv_file)
         self._instructions = parser.get_instructions()
@@ -28,9 +29,6 @@ class RiscvInterpreter():
 
         # Number of pickles created thus far.
         self.pickle_count = 0
-
-        # Need to add instruction policy argument.
-        self.taint_policy = TaintPolicy()
 
         # Current block changes at every jump, call, and return.
         self.current_block = "main"
@@ -145,13 +143,10 @@ def main():
     # TODO: implement program_args as single input file
     # program_args = sys.argv[min_args:]
 
-    interpreter = RiscvInterpreter(riscv_file)
-
-    policy = TaintPolicy()
+    interpreter = RiscvInterpreter(riscv_file, policy_from_disk)
 
     # Interpreter loop with taint tracking.
     while(interpreter.run()):
-        policy.num_total_instr_run += 1
         interpreter.pickle_current_state("state", pickle_jar)
 
     # Return value is stored in 'a0'.
