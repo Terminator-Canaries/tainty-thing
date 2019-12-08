@@ -281,6 +281,10 @@ class RiscvInstr():
             return 0
         elif self.opcode == "sw":
             self.execute_sw(state)
+        elif self.opcode == "mv":
+            # mv is a pseudoinstruction for addi arg1, arg2, 0
+            self.operands.append(RiscvOperand("0", self._block_labels))
+            self.execute_addi(state)
         else:
-            raise Exception("Execute operand not handled.")
+            raise Exception("Execute operand {} not handled.".format(self.opcode))
         return no_jump

@@ -107,3 +107,6 @@ venv.bak/
 # LLVM
 *.bc
 *.ll
+
+# pickles
+pickle_cabinet/
