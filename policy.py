@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from instruction import SUPPORTED_FUNCTIONS
 
-
 ## BEGIN HANDLERS ##
 # a taint handler is function of arguments (tracker, state, operands)
 # where tracker is the instantiated taint tracker, state is the execution state and operands
@@ -99,6 +98,26 @@ def taint_mv(tracker, state, operands):
     return
 
 
+def thunk(tracker, state, operands):
+    pass
+
+
+# lw op0, op1(op2)
+# op0 = val(op2 + op1)
+def taint_lw(tracker, state, operands):
+    ## TODO:!!! this is not an ideal implementation,
+    ## but control flow taint is doable from here
+    # if either of the values are tainted,
+    # propagate that taint to the result
+    # op1 = operands[1].mem_reference.get_base()
+    # op2 = operands[1].mem_reference.get_offset()
+    # tracker.get_operand_taint(o)
+    # otherwise
+    mem_taint = tracker.get_operand_taint(operands[1])
+    tracker.replace_operand_taint(operands[0], mem_taint)
+    return
+
+
 ## BEGIN POLICY ##
 # A policy is a mapping of instruction string labels to their handlers
 policy = {
@@ -108,6 +127,11 @@ policy = {
     "call": taint_call,
     "mv": taint_mv,
     "ret": taint_ret,
+    "lw": taint_lw,
+    "blt": thunk,
+    "bne": thunk,
+    "beq": thunk,
+    "j": thunk,
 }
 
 # # Handle the specified operation.
