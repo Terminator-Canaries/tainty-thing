@@ -22,30 +22,33 @@ TAINT_PASSWORD = 0x10000
 TAINT_OTHER = 0x100000
 
 SUPPORTED_FUNCTIONS = {
-        'get_user_location': TAINT_LOC,
-        'get_uid': TAINT_UID,
-        'get_user_name': TAINT_NAME,
-        'get_face': TAINT_FACE,
-        'get_password': TAINT_PASSWORD
+    "get_user_location": TAINT_LOC,
+    "get_uid": TAINT_UID,
+    "get_user_name": TAINT_NAME,
+    "get_face": TAINT_FACE,
+    "get_password": TAINT_PASSWORD,
 }
+
 
 class InsufficientOperands(Exception):
     """
     Raise when execute_opcode called with insufficent operands.
     """
+
     pass
 
 
-class MemoryReference():
+class MemoryReference:
     """
     Necessary so that resolving reference is done only upon excuting.
     """
+
     def __init__(self, token):
-        base = token.split('(')[1].strip(')').lower()
-        offset = token.split('(')[0]
+        base = token.split("(")[1].strip(")").lower()
+        offset = token.split("(")[0]
 
         self.base = base
-        if offset[0] == '-':
+        if offset[0] == "-":
             self.offset = -int(offset[1:])
         else:
             self.offset = int(offset)
@@ -58,10 +61,11 @@ class MemoryReference():
         return self.base
 
 
-class RiscvOperand():
+class RiscvOperand:
     """
     Represents an abstract righthand side operand.
     """
+
     def __init__(self, token, block_labels):
         self._token = token
         self._offset = 0
@@ -88,7 +92,7 @@ class RiscvOperand():
 
     # Check if string matches pattern 'offset(base)'.
     def _is_memory_ref(self):
-        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
+        return re.match(r"-{0,1}[a-z0-9]*\(([a-z0-9]*)\)", self._token)
 
     # Check if the token is a supported function.
     def is_call_function(self):
@@ -108,22 +112,26 @@ class RiscvOperand():
 
     def get_target_name(self):
         if self._type != OPERAND_LABEL:
-            raise Exception("Target {} is not an operand label.".format(self.to_string()))
+            raise Exception(
+                "Target {} is not an operand label.".format(self.to_string())
+            )
         return self._token
 
 
-class RiscvInstr():
+class RiscvInstr:
     """
     Represents a single line of RISC-V binary.
     """
+
     def __init__(self, tokens, block_labels):
         self._tokens = tokens
         self._block_labels = block_labels
         self.opcode = tokens[0]
         self.operands = []
         if len(tokens) > 1:
-            self.operands = [RiscvOperand(operand, self._block_labels)
-                             for operand in tokens[1:]]
+            self.operands = [
+                RiscvOperand(operand, self._block_labels) for operand in tokens[1:]
+            ]
 
     def to_string(self):
         return str(self._tokens)
@@ -175,8 +183,10 @@ class RiscvInstr():
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
+        if state.get_operand_val(self.operands[0]) == state.get_operand_val(
+            self.operands[1]
+        ):
+            state.set_register("pc", pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -188,8 +198,10 @@ class RiscvInstr():
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
+        if state.get_operand_val(self.operands[0]) != state.get_operand_val(
+            self.operands[1]
+        ):
+            state.set_register("pc", pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -201,8 +213,10 @@ class RiscvInstr():
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) < state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
+        if state.get_operand_val(self.operands[0]) < state.get_operand_val(
+            self.operands[1]
+        ):
+            state.set_register("pc", pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -214,7 +228,7 @@ class RiscvInstr():
             raise InsufficientOperands()
         jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
-        state.set_register('pc', pc)
+        state.set_register("pc", pc)
         return jump_val
 
     # lui    op0, op1
@@ -234,12 +248,40 @@ class RiscvInstr():
         load_val = state.get_operand_val(mem_reference)
         state.update_val(self.operands[0], load_val)
 
+    # jalr op0, op1, op2
+    # jump to (op1 + op2) with last bit 0
+    # set op0 to address following the jump (%pc + 4)
+    def execute_jalr(self, state):
+        if len(self.operands) != 3:
+            raise InsufficientOperands()
+        tmp = state.get_register("pc") + 1
+        # %pc = (op1 + op2) & 0xFFFFFFFE
+        v1 = state.get_operand_val(self.operands[1])
+        print("Ret ra val is {}",v1)
+        v2 = state.get_operand_val(self.operands[2])
+        print("Ret operands are {}",[s.to_string() for s in self.operands])
+        jump_val = (v1 + v2)
+        state.set_register("pc", jump_val)
+        # %rd = (prior %pc + 4)
+        state.set_register(self.operands[0]._token, tmp)
+        return
+
     def execute_ret(self, state):
         if len(self.operands) != 0:
+            print("Ret got {} operands".format([s.to_string() for s in self.operands]))
             raise InsufficientOperands()
-        # Return address is stored in 'ra'.
-        ra = state.get_register('ra')
-        state.set_register('pc', ra)
+        # ret is just a pseudoinstruction for
+        # jalr zero, ra, 0
+        self.operands.extend(
+            [
+                RiscvOperand("zero", self._block_labels),
+                RiscvOperand("ra", self._block_labels),
+                RiscvOperand("zero", self._block_labels),
+            ]
+        )
+        self.execute_jalr(state)
+        # hack to deal w/ rerunning the same instruction multiple times
+        self.operands = []
 
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
@@ -257,16 +299,16 @@ class RiscvInstr():
             raise InsufficientOperands()
         elif len(self.operands) != 1:
             raise Exception("Function args not yet handled.")
-        
-        # Set the return address in 'ra' to 'pc'+1.
-        pc = state.get_register('pc')
-        state.set_register('ra', pc+1)
 
+        # Set the return address in 'ra' to 'pc'+1.
+        pc = state.get_register("pc")
+        print("PC is ", pc)
+        new_ra = pc + 1
+        state.set_register("ra", new_ra)
         # Jump to the function name.
         jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
-        state.set_register('pc', pc)
-
+        state.set_register("pc", pc)
         return jump_val
 
     def execute(self, state, tracker):
