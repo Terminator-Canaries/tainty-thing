@@ -9,7 +9,6 @@ from state import RiscvState
 from taint import TaintPolicy, TaintTracker
 from policy import policy as policy_from_disk
 import shutil
-from analyze import Analyzer
 
 
 MEM_SIZE = 4096
