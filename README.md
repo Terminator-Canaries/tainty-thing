@@ -96,8 +96,7 @@ A proof of concept showing our taint tracking interpreter is capable of uploadin
 and executing them easily. This feature is essential for a dynamic taint tracking system, 
 allowing the potential for increasing/decreasing taint policies mid-program execution.
 
-* Example Execution.
-* python backtrack.py --pickle_path=<path to a pickled state>
+* Example Execution:  python backtrack.py --pickle_path=<path to a pickled state>
 
 `policy.py`
 Defines the developer's taint propagation policy. A policy is a mapping of RISC-V instruction
@@ -115,5 +114,4 @@ Outputs generated graphs to the directory <pickle_jar_path>/data/
 
 * class Analyzer - Uploads the snapshotted state from the specified pickle_jar.
 
-* Example Execution.
-* analyzer.py --pickle_jar=<pickle_jar_path> --memory_graph --register_graph
+* Example Execution:  analyzer.py --pickle_jar=<pickle_jar_path> --memory_graph --register_graph
