@@ -4,7 +4,10 @@ taint.py
 Defines object representations necessary to track and propagate taint.
 """
 
+from collections import defaultdict
 from state import ABI_TO_REGISTER_IDX
+from instruction import SUPPORTED_FUNCTIONS
+
 from instruction import (
     TAINT_LOC,
     TAINT_UID,
@@ -14,6 +17,34 @@ from instruction import (
     TAINT_OTHER,
 )
 
+TAINT_DEST = {
+    "addi": 0,
+    "add": 0,
+    "sub": 0,
+    "subi": 0,
+    "and": 0,
+    "andi": 0,
+    "xor": 0,
+    "xori": 0,
+    "srl": 0,
+    "srli": 0,
+    "sll": 0,
+    "slli": 0,
+    "sw": 1,
+    "call": "call",
+    "mv": 0,
+    "ret": "ret",
+    "lw": 0,
+    "blt": "jump",
+    "bne": "jump",
+    "bnez": "jump",
+    "beq": "jump",
+    "j": "jump",
+    "jalr": "jump",
+    "lui": 0
+}
+
+
 # Defines rules for taint propagation.
 class TaintPolicy:
     def __init__(self):
@@ -22,7 +53,6 @@ class TaintPolicy:
         self.num_total_instr_run = 0
         self.num_tainted_instr_run = 0
         self.time_in_taint_mode = 0
-
 
 class TaintTracker:
     def __init__(self, state, policy):
@@ -46,6 +76,10 @@ class TaintTracker:
         # Shadow state for taint tracking.
         self.shadow_registers = [0 for i in range(33)]
         self.shadow_memory = [0 for i in range(self.MEM_SIZE)]
+
+        # For Heavy Hitter tracking.
+        # For each instruction line, stores whether taint was propogated.
+        self.propagation_history = defaultdict(list)
 
     def get_reg_idx(self, reg):
         if type(reg).__name__ == "str" and reg in ABI_TO_REGISTER_IDX:
@@ -167,7 +201,29 @@ class TaintTracker:
         if opcode not in self.policy:
             raise Exception("Taint opcode '{}' not handled.".format(opcode))
         self.policy[opcode](tracker=self, state=state, operands=operands)
+
+        # For Heavy Hitter data
+        self.propagation_history_track(opcode, operands)
+
         self.print_only_tainted_registers()    
+
+    # Determines whether taint was propagated.
+    # Updates internal propagation_history dictionary.
+    def propagation_history_track(self, opcode, operands):
+        strategy = TAINT_DEST[opcode]
+        is_tainted_line = 0
+
+        if strategy == 0 or strategy == 1:
+            is_tainted_line = self.get_operand_taint(operands[strategy])
+        elif strategy == "call":
+            if operands[0].to_string() in SUPPORTED_FUNCTIONS:
+                is_tainted_line = SUPPORTED_FUNCTIONS[operands[0].to_string()]
+        elif not strategy == "ret" and not strategy == "jump":
+            raise Exception("Strategy {} not handled.".format(strategy))
+
+        pc = self.state.get_register('pc')
+        self.propagation_history[pc].append(is_tainted_line)
+
 
     def print_registers_taint(self):
         print("\nREGISTER TAINT:\n")

@@ -41,6 +41,10 @@ class RiscvInterpreter():
         # To help detect when the final return is executed.
         self.state.set_register('ra', -1)
 
+        # Heavy hitters threshold. 
+        self.hh_threshold = .75
+
+
     def get_state(self):
         return self.state
 
@@ -104,6 +108,14 @@ class RiscvInterpreter():
         file = open("{}/pickles/{}-instr{}-line{}".format(pickle_jar, fileheader, pickle_num, pc), 'rb')
         return pickle.load(file)
 
+    def print_heavy_hitters(self):
+        print("HEAVY HITTERS")
+        for line, history in self.tracker.propagation_history.items():
+            percentage = sum(history) / len(history)
+            if  percentage > self.hh_threshold:
+                print("line {} : {}".format(line, self._instructions[line].to_string()))
+        return
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: {} <riscv_file> <program_args>"
@@ -129,7 +141,6 @@ def main():
     os.mkdir("{}/data".format(pickle_jar))
 
     # TODO: handle arguments
-    # TODO: implement program_args as single input file
     # program_args = sys.argv[min_args:]
 
 
@@ -144,6 +155,7 @@ def main():
     print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
     print("\nEXECUTION FINISHED!\n\n####################")
     interpreter.tracker.print_registers_taint()
+    interpreter.print_heavy_hitters()
 
     return 0
 
