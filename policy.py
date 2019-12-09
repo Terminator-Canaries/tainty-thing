@@ -132,5 +132,5 @@ policy = {
     "beq": thunk,
     "j": thunk,
     "jalr": thunk,
-    "lui": taint_mv
+    "lui": taint_lui
 }
