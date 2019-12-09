@@ -200,8 +200,6 @@ class TaintTracker:
         # For Heavy Hitter data
         self.propagation_history_track(opcode, operands)
 
-        self.print_only_tainted_registers()
-
     # Determines whether taint was propagated.
     # Updates internal propagation_history dictionary.
     def propagation_history_track(self, opcode, operands):
@@ -220,7 +218,7 @@ class TaintTracker:
         self.propagation_history[pc].append(is_tainted_line)
 
     def print_registers_taint(self):
-        print("\nREGISTER TAINT:\n")
+        print("\nREGISTER TAINT:")
 
         # Shadow state for taint tracking.
         for reg, idx in ABI_TO_REGISTER_IDX.items():

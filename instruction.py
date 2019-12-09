@@ -283,7 +283,6 @@ class RiscvInstr:
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        print("pc = ", pc)
         if state.get_operand_val(self.operands[0]) < state.get_operand_val(
             self.operands[1]
         ):

@@ -100,7 +100,7 @@ class RiscvInterpreter():
         pc = self.state.get_register('pc')
         instr = self._instructions[pc]
 
-        print("\nRUN INSTR {}: {}".format(pc, instr.to_string()))
+        print("\nRUN LINE {}: {}".format(pc, instr.to_string()))
         return self._run_one(instr)
 
     def pickle_current_state(self, fileheader, pickle_jar):
@@ -115,7 +115,7 @@ class RiscvInterpreter():
         return pickle.load(file)
 
     def print_heavy_hitters(self):
-        print("HEAVY HITTERS")
+        print("\nHEAVY HITTERS")
         for line, history in self.tracker.propagation_history.items():
             percentage = sum(history) / len(history)
             if percentage > self.hh_threshold:
@@ -160,7 +160,7 @@ def main():
 
     # Return value is stored in 'a0'.
     print("\nRETURN VALUE: ", interpreter.state.get_register('a0'))
-    print("\nEXECUTION FINISHED!\n\n####################")
+    print("\nEXECUTION FINISHED!\n\n####### FINAL RESULTS #############")
     interpreter.tracker.print_registers_taint()
     interpreter.print_heavy_hitters()
 

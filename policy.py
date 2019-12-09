@@ -23,8 +23,6 @@ from functools import partial
 def taint_arith(tracker, state, operands):
     taint1 = tracker.get_operand_taint(operands[1])
     taint2 = tracker.get_operand_taint(operands[2])
-    print("Taint1 {} taint2 {}".format(taint1,taint2))
-    print(tracker.OR(taint1, taint2))
     tracker.replace_operand_taint(operands[0], tracker.OR(taint1, taint2))
 
 
@@ -90,9 +88,7 @@ def taint_ret(tracker, state, operands):
 # taint function op0
 def taint_call(tracker, state, operands):
     function_name = operands[0].get_target_name()
-    print(function_name)
     if function_name in SUPPORTED_FUNCTIONS:
-        print("############CALL")
         tracker.taint_source = SUPPORTED_FUNCTIONS[function_name]
     return
 
@@ -123,6 +119,7 @@ def taint_lw(tracker, state, operands):
 
 def pc_wrapper(handler, tracker, state, operands):
     pc = state.get_register('pc')
+    # Example of a custom wrapper, where the user wants to see taint at certain lines.
     if  pc > 14 and pc < 18:
         tracker.print_registers_taint()
     handler(tracker, state,operands)
