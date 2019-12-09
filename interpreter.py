@@ -18,6 +18,7 @@ MEM_SIZE = 4096
 STACK_SIZE = 128
 PICKLE_CABINET = "pickle_cabinet"
 
+
 class RiscvInterpreter():
     """
     Simulates execution of a RISC-V binary.
@@ -44,9 +45,8 @@ class RiscvInterpreter():
         # To help detect when the final return is executed.
         self.state.set_register('ra', -1)
 
-        # Heavy hitters threshold. 
+        # Heavy hitters threshold.
         self.hh_threshold = .75
-
 
     def get_state(self):
         return self.state
@@ -115,9 +115,10 @@ class RiscvInterpreter():
         print("HEAVY HITTERS")
         for line, history in self.tracker.propagation_history.items():
             percentage = sum(history) / len(history)
-            if  percentage > self.hh_threshold:
+            if percentage > self.hh_threshold:
                 print("line {} : {}".format(line, self._instructions[line].to_string()))
         return
+
 
 def main():
     if len(sys.argv) < 2:
@@ -134,7 +135,8 @@ def main():
     if not os.path.isdir(PICKLE_CABINET):
         os.mkdir(PICKLE_CABINET)
 
-    # Create file specific pickle folder if it doesn't already exist or clears old old pickle folder.
+    # Create file specific pickle folder if it doesn't already exist
+    # or clears old old pickle folder.
     filename = riscv_file.split('.')[0].replace("/", "_")
     pickle_jar = "{}/jar_{}".format(PICKLE_CABINET, filename)
     if os.path.isdir(pickle_jar):
@@ -145,7 +147,6 @@ def main():
 
     # TODO: handle arguments
     # program_args = sys.argv[min_args:]
-
 
     print("\nBEGINNING EXECUTION...")
     interpreter = RiscvInterpreter(riscv_file, policy_from_disk)

@@ -54,6 +54,7 @@ class TaintPolicy:
         self.num_tainted_instr_run = 0
         self.time_in_taint_mode = 0
 
+
 class TaintTracker:
     def __init__(self, state, policy):
         # Physical limits.
@@ -224,17 +225,16 @@ class TaintTracker:
         pc = self.state.get_register('pc')
         self.propagation_history[pc].append(is_tainted_line)
 
-
     def print_registers_taint(self):
         print("\nREGISTER TAINT:\n")
 
         # Shadow state for taint tracking.
         for reg, idx in ABI_TO_REGISTER_IDX.items():
-                print(
-                    "'{}' taint = {}".format(
-                        reg, self.print_taint(self.shadow_registers[idx])
-                    )
+            print(
+                "'{}' taint = {}".format(
+                    reg, self.print_taint(self.shadow_registers[idx])
                 )
+            )
         return
 
     def print_only_tainted_registers(self):
@@ -242,12 +242,12 @@ class TaintTracker:
 
         # Shadow state for taint tracking.
         for reg, idx in ABI_TO_REGISTER_IDX.items():
-                if self.shadow_registers[idx]:
-                    print(
-                        "'{}' taint = {}".format(
-                            reg, self.print_taint(self.shadow_registers[idx])
-                        )
+            if self.shadow_registers[idx]:
+                print(
+                    "'{}' taint = {}".format(
+                        reg, self.print_taint(self.shadow_registers[idx])
                     )
+                )
         return
 
     def print_memory_taint(self):
