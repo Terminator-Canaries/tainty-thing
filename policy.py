@@ -11,7 +11,7 @@ from functools import partial
 
 # addi    op0, op1, op2
 # op0 = op1 + sext(op2)
-def taint_addi(tracker, state, operands):
+def taint_arith(tracker, state, operands):
     taint1 = tracker.get_operand_taint(operands[1])
     taint2 = tracker.get_operand_taint(operands[2])
     print("Taint1 {} taint2 {}".format(taint1,taint2))
@@ -120,8 +120,18 @@ def pc_wrapper(handler, tracker, state, operands):
 
 # A policy is a mapping of instruction string labels to their handlers.
 policy = {
-    "addi": partial(pc_wrapper, handler=taint_addi),
-    "add": partial(pc_wrapper, handler=taint_addi),
+    "addi": partial(pc_wrapper, handler=taint_arith),
+    "add": partial(pc_wrapper, handler=taint_arith),
+    "sub": partial(pc_wrapper, handler=taint_arith),
+    "subi": partial(pc_wrapper, handler=taint_arith),
+    "and": partial(pc_wrapper, handler=taint_arith),
+    "andi": partial(pc_wrapper, handler=taint_arith),
+    "xor": partial(pc_wrapper, handler=taint_arith),
+    "xori": partial(pc_wrapper, handler=taint_arith),
+    "srl": partial(pc_wrapper, handler=taint_arith),
+    "srli": partial(pc_wrapper, handler=taint_arith),
+    "sll": partial(pc_wrapper, handler=taint_arith),
+    "slli": partial(pc_wrapper, handler=taint_arith),
     "sw": taint_sw,
     "call": taint_call,
     "mv": taint_mv,
