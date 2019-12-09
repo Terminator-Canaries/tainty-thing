@@ -174,6 +174,50 @@ class RiscvInstr:
         update_val = val1 - val2
         state.update_val(self.operands[0], update_val)
 
+    # andi    op0, op1, op2
+    # op0 = op1 - sext(op2)
+    def execute_andi(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 & val2
+        state.update_val(self.operands[0], update_val)
+
+    # xori    op0, op1, op2
+    # op0 = op1 - sext(op2)
+    def execute_xori(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 ^ val2
+        state.update_val(self.operands[0], update_val)
+
+    # srli    op0, op1, op2
+    # op0 = op1 >> sext(op2)
+    def execute_srli(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 >> val2
+        state.update_val(self.operands[0], update_val)
+
+    # slli    op0, op1, op2
+    # op0 = op1 << sext(op2)
+    def execute_slli(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 << val2
+        state.update_val(self.operands[0], update_val)
+
     # lui    op0, op1
     # op0 = op1 << 12
     def execute_lui(self, state):
@@ -338,6 +382,14 @@ class RiscvInstr:
             self.execute_addi(state)
         elif self.opcode == "subi" or self.opcode == "sub":
             self.execute_subi(state)
+        elif self.opcode == "andi" or self.opcode == "and":
+            self.execute_andi(state)
+        elif self.opcode == "xori" or self.opcode == "xor":
+            self.execute_xori(state)
+        elif self.opcode == "srli" or self.opcode == "srl":
+            self.execute_srli(state)
+        elif self.opcode == "slli" or self.opcode == "sll":
+            self.execute_slli(state)
         elif self.opcode == "lui":
             self.execute_lui(state)
         elif self.opcode == "beq":
