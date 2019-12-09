@@ -126,10 +126,6 @@ def pc_wrapper(handler, tracker, state, operands):
         tracker.print_registers_taint()
     handler(tracker, state,operands)
 
-def array_source(tracker,state,operands):
-    # wrap the array declaration in a function call or identify where the array is in source
-
-
 # A policy is a mapping of instruction string labels to their handlers.
 policy = {
     "addi": partial(pc_wrapper, handler=taint_arith),
