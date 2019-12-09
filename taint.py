@@ -166,7 +166,8 @@ class TaintTracker:
     def taint_by_operand(self, state, opcode, operands):
         if opcode not in self.policy:
             raise Exception("Taint opcode '{}' not handled.".format(opcode))
-        self.policy[opcode](tracker=self, state=state, operands=operands)
+        self.print_only_tainted_registers()
+        self.policy[opcode](tracker=self, state=state, operands=operands)        
 
     def print_registers_taint(self):
         print("\nREGISTER TAINT:\n")
@@ -178,6 +179,19 @@ class TaintTracker:
                         reg, self.print_taint(self.shadow_registers[idx])
                     )
                 )
+        return
+
+    def print_only_tainted_registers(self):
+        print("REGISTER TAINT:")
+
+        # Shadow state for taint tracking.
+        for reg, idx in ABI_TO_REGISTER_IDX.items():
+                if self.shadow_registers[idx]:
+                    print(
+                        "'{}' taint = {}".format(
+                            reg, self.print_taint(self.shadow_registers[idx])
+                        )
+                    )
         return
 
     def print_memory_taint(self):
