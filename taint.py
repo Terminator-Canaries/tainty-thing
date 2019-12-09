@@ -166,8 +166,8 @@ class TaintTracker:
     def taint_by_operand(self, state, opcode, operands):
         if opcode not in self.policy:
             raise Exception("Taint opcode '{}' not handled.".format(opcode))
-        self.print_only_tainted_registers()
-        self.policy[opcode](tracker=self, state=state, operands=operands)        
+        self.policy[opcode](tracker=self, state=state, operands=operands)
+        self.print_only_tainted_registers()    
 
     def print_registers_taint(self):
         print("\nREGISTER TAINT:\n")

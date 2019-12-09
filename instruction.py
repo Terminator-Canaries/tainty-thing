@@ -214,6 +214,19 @@ class RiscvInstr:
         else:
             return 1  # no_jump
 
+    # bnez    op0, op1
+    # jump to op1 if op0 != 0
+    def execute_bnez(self, state):
+        if len(self.operands) != 2:
+            raise InsufficientOperands()
+        branch_val = (self.operands[1]).get_target_name()
+        pc = self.get_jump_target(branch_val)
+        if state.get_operand_val(self.operands[0]) != 0:
+            state.set_register("pc", pc)
+            return branch_val
+        else:
+            return 1  # no_jump
+
     # blt    op0, op1, op2
     # jump to op2 if op0 < op1
     def execute_blt(self, state):
@@ -221,6 +234,7 @@ class RiscvInstr:
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
+        print("pc = ", pc)
         if state.get_operand_val(self.operands[0]) < state.get_operand_val(
             self.operands[1]
         ):
@@ -330,8 +344,10 @@ class RiscvInstr:
             return self.execute_beq(state)
         elif self.opcode == "bne":
             return self.execute_bne(state)
+        elif self.opcode == "bnez":
+            return self.execute_bnez(state)
         elif self.opcode == "blt":
-            self.execute_blt(state)
+            return self.execute_blt(state)
         elif self.opcode == "mv":
             self.execute_mv(state)
         elif self.opcode == "lw":
