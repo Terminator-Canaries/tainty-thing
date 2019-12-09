@@ -22,12 +22,13 @@ TAINT_PASSWORD = 0x10000
 TAINT_OTHER = 0x100000
 
 SUPPORTED_FUNCTIONS = {
-        'get_user_location': TAINT_LOC,
-        'get_uid': TAINT_UID,
-        'get_user_name': TAINT_NAME,
-        'get_face': TAINT_FACE,
-        'get_password': TAINT_PASSWORD
+    "get_user_location": TAINT_LOC,
+    "get_uid": TAINT_UID,
+    "get_user_name": TAINT_NAME,
+    "get_face": TAINT_FACE,
+    "get_password": TAINT_PASSWORD,
 }
+
 
 class InsufficientOperands(Exception):
     """
@@ -36,16 +37,16 @@ class InsufficientOperands(Exception):
     pass
 
 
-class MemoryReference():
+class MemoryReference:
     """
     Necessary so that resolving reference is done only upon excuting.
     """
     def __init__(self, token):
-        base = token.split('(')[1].strip(')').lower()
-        offset = token.split('(')[0]
+        base = token.split("(")[1].strip(")").lower()
+        offset = token.split("(")[0]
 
         self.base = base
-        if offset[0] == '-':
+        if offset[0] == "-":
             self.offset = -int(offset[1:])
         else:
             self.offset = int(offset)
@@ -58,7 +59,7 @@ class MemoryReference():
         return self.base
 
 
-class RiscvOperand():
+class RiscvOperand:
     """
     Represents an abstract righthand side operand.
     """
@@ -88,7 +89,7 @@ class RiscvOperand():
 
     # Check if string matches pattern 'offset(base)'.
     def _is_memory_ref(self):
-        return re.match(r'-{0,1}[a-z0-9]*\(([a-z0-9]*)\)', self._token)
+        return re.match(r"-{0,1}[a-z0-9]*\(([a-z0-9]*)\)", self._token)
 
     # Check if the token is a supported function.
     def is_call_function(self):
@@ -108,11 +109,13 @@ class RiscvOperand():
 
     def get_target_name(self):
         if self._type != OPERAND_LABEL:
-            raise Exception("Target {} is not an operand label.".format(self.to_string()))
+            raise Exception(
+                "Target {} is not an operand label.".format(self.to_string())
+            )
         return self._token
 
 
-class RiscvInstr():
+class RiscvInstr:
     """
     Represents a single line of RISC-V binary.
     """
@@ -122,8 +125,9 @@ class RiscvInstr():
         self.opcode = tokens[0]
         self.operands = []
         if len(tokens) > 1:
-            self.operands = [RiscvOperand(operand, self._block_labels)
-                             for operand in tokens[1:]]
+            self.operands = [
+                RiscvOperand(operand, self._block_labels) for operand in tokens[1:]
+            ]
 
     def to_string(self):
         return str(self._tokens)
@@ -145,6 +149,8 @@ class RiscvInstr():
         # Create operand representing the address mem_location using format 'offset(base)'.
         mem_reference = RiscvOperand(str(mem_location) + "(zero)", self._block_labels)
         return mem_reference
+
+    ## ARITHMETIC
 
     # addi    op0, op1, op2
     # op0 = op1 + sext(op2)
@@ -168,6 +174,60 @@ class RiscvInstr():
         update_val = val1 - val2
         state.update_val(self.operands[0], update_val)
 
+    # andi    op0, op1, op2
+    # op0 = op1 - sext(op2)
+    def execute_andi(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 & val2
+        state.update_val(self.operands[0], update_val)
+
+    # xori    op0, op1, op2
+    # op0 = op1 - sext(op2)
+    def execute_xori(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 ^ val2
+        state.update_val(self.operands[0], update_val)
+
+    # srli    op0, op1, op2
+    # op0 = op1 >> sext(op2)
+    def execute_srli(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 >> val2
+        state.update_val(self.operands[0], update_val)
+
+    # slli    op0, op1, op2
+    # op0 = op1 << sext(op2)
+    def execute_slli(self, state):
+        if len(self.operands) < 3:
+            raise InsufficientOperands()
+        # Technically op2 is sign extended but doesn't matter in Python.
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        update_val = val1 << val2
+        state.update_val(self.operands[0], update_val)
+
+    # lui    op0, op1
+    # op0 = op1 << 12
+    def execute_lui(self, state):
+        if len(self.operands) < 2:
+            raise InsufficientOperands()
+        update_val = state.get_operand_val(self.operands[1]) << 12
+        state.update_val(self.operands[0], update_val)
+
+    ## BRANCHES
+
     # beq    op0, op1, op2
     # jump to op2 if op0 == op1
     def execute_beq(self, state):
@@ -175,8 +235,10 @@ class RiscvInstr():
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) == state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
+        if state.get_operand_val(self.operands[0]) == state.get_operand_val(
+            self.operands[1]
+        ):
+            state.set_register("pc", pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -188,8 +250,23 @@ class RiscvInstr():
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) != state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
+        if state.get_operand_val(self.operands[0]) != state.get_operand_val(
+            self.operands[1]
+        ):
+            state.set_register("pc", pc)
+            return branch_val
+        else:
+            return 1  # no_jump
+
+    # bnez    op0, op1
+    # jump to op1 if op0 != 0
+    def execute_bnez(self, state):
+        if len(self.operands) != 2:
+            raise InsufficientOperands()
+        branch_val = (self.operands[1]).get_target_name()
+        pc = self.get_jump_target(branch_val)
+        if state.get_operand_val(self.operands[0]) != 0:
+            state.set_register("pc", pc)
             return branch_val
         else:
             return 1  # no_jump
@@ -201,29 +278,24 @@ class RiscvInstr():
             raise InsufficientOperands()
         branch_val = (self.operands[2]).get_target_name()
         pc = self.get_jump_target(branch_val)
-        if state.get_operand_val(self.operands[0]) < state.get_operand_val(self.operands[1]):
-            state.set_register('pc', pc)
+        print("pc = ", pc)
+        if state.get_operand_val(self.operands[0]) < state.get_operand_val(
+            self.operands[1]
+        ):
+            state.set_register("pc", pc)
             return branch_val
         else:
             return 1  # no_jump
 
-    # j    op0
-    # jump to op0
-    def execute_j(self, state):
-        if len(self.operands) < 1:
-            raise InsufficientOperands()
-        jump_val = (self.operands[0]).get_target_name()
-        pc = self.get_jump_target(jump_val)
-        state.set_register('pc', pc)
-        return jump_val
+    ## MEMORY
 
-    # lui    op0, op1
-    # op0 = op1 << 12
-    def execute_lui(self, state):
-        if len(self.operands) < 2:
-            raise InsufficientOperands()
-        update_val = state.get_operand_val(self.operands[1]) << 12
-        state.update_val(self.operands[0], update_val)
+    # mv    op0, op1
+    # assign op1 to op0
+    def execute_mv(self, state):
+        # mv is a pseudoinstruction for:
+        # addi    arg1, arg2, 0
+        self.operands.append(RiscvOperand("0", self._block_labels))
+        self.execute_addi(state)
 
     # lw    op0, op1(op2)
     # op0 = val(op2 + op1)
@@ -234,13 +306,6 @@ class RiscvInstr():
         load_val = state.get_operand_val(mem_reference)
         state.update_val(self.operands[0], load_val)
 
-    def execute_ret(self, state):
-        if len(self.operands) != 0:
-            raise InsufficientOperands()
-        # Return address is stored in 'ra'.
-        ra = state.get_register('ra')
-        state.set_register('pc', ra)
-
     # sw    op0, op1(op2)
     # val(op2 + op1) = op0
     def execute_sw(self, state):
@@ -250,56 +315,105 @@ class RiscvInstr():
         store_val = state.get_operand_val(self.operands[0])
         state.update_val(mem_reference, store_val)
 
+    ## CALL, JUMPS, RET
+
     # call   op0
     # execute function op0
     def execute_call(self, state):
         if len(self.operands) < 1:
             raise InsufficientOperands()
         elif len(self.operands) != 1:
-            raise Exception("Function args not yet handled.")
-        
-        # Set the return address in 'ra' to 'pc'+1.
-        pc = state.get_register('pc')
-        state.set_register('ra', pc+1)
-
+            raise Exception("Function args not yet handled")
+        # Set the return address to one after the current line.
+        pc = state.get_register("pc")
+        state.set_register("ra", pc+1)
         # Jump to the function name.
         jump_val = (self.operands[0]).get_target_name()
         pc = self.get_jump_target(jump_val)
-        state.set_register('pc', pc)
-
+        state.set_register("pc", pc)
         return jump_val
 
+    # j    op0
+    # jump to op0
+    def execute_j(self, state):
+        if len(self.operands) < 1:
+            raise InsufficientOperands()
+        jump_val = (self.operands[0]).get_target_name()
+        pc = self.get_jump_target(jump_val)
+        state.set_register("pc", pc)
+        return jump_val
+
+    # jalr    op0, op1, op2
+    # jump to (op1 + op2) with last bit 0
+    # set op0 to address following the jump (%pc + 4)
+    def execute_jalr(self, state):
+        if len(self.operands) != 3:
+            raise InsufficientOperands()
+        pc = state.get_register("pc")
+        # %pc = (op1 + op2) & 0xFFFFFFFE
+        val1 = state.get_operand_val(self.operands[1])
+        val2 = state.get_operand_val(self.operands[2])
+        jump_val = val1 + val2
+        state.set_register("pc", jump_val)
+        # %rd = (prior %pc + 4)
+        state.set_register(self.operands[0].to_string(), pc+1)
+        return jump_val
+
+    def execute_ret(self, state):
+        if len(self.operands) != 0:
+            print("Ret got {} operands".format([s.to_string() for s in self.operands]))
+            raise InsufficientOperands()
+        # ret is a pseudoinstruction for:
+        # jalr    zero, ra, zero
+        self.opcode = "jalr"
+        self.operands = [
+            RiscvOperand("zero", self._block_labels),
+            RiscvOperand("ra", self._block_labels),
+            RiscvOperand("zero", self._block_labels),
+        ]
+        # If return address is -1 then final return was executed.
+        return -1 if self.execute_jalr(state) == -1 else 0
+
     def execute(self, state, tracker):
-        no_jump = 1
+        result = 1
         tracker.taint_by_operand(state, self.opcode, self.operands)
 
         if self.opcode == "addi" or self.opcode == "add":
             self.execute_addi(state)
         elif self.opcode == "subi" or self.opcode == "sub":
             self.execute_subi(state)
+        elif self.opcode == "andi" or self.opcode == "and":
+            self.execute_andi(state)
+        elif self.opcode == "xori" or self.opcode == "xor":
+            self.execute_xori(state)
+        elif self.opcode == "srli" or self.opcode == "srl":
+            self.execute_srli(state)
+        elif self.opcode == "slli" or self.opcode == "sll":
+            self.execute_slli(state)
+        elif self.opcode == "lui":
+            self.execute_lui(state)
         elif self.opcode == "beq":
             return self.execute_beq(state)
         elif self.opcode == "bne":
             return self.execute_bne(state)
+        elif self.opcode == "bnez":
+            return self.execute_bnez(state)
         elif self.opcode == "blt":
-            self.execute_blt(state)
+            return self.execute_blt(state)
+        elif self.opcode == "mv":
+            self.execute_mv(state)
+        elif self.opcode == "lw":
+            self.execute_lw(state)
+        elif self.opcode == "sw":
+            self.execute_sw(state)
         elif self.opcode == "call":
             return self.execute_call(state)
         elif self.opcode == "j":
             return self.execute_j(state)
-        elif self.opcode == "lui":
-            self.execute_lui(state)
-        elif self.opcode == "lw":
-            self.execute_lw(state)
+        elif self.opcode == "jalr":
+            return self.execute_jalr(state)
         elif self.opcode == "ret":
-            self.execute_ret(state)
-            return 0
-        elif self.opcode == "sw":
-            self.execute_sw(state)
-        elif self.opcode == "mv":
-            # mv is a pseudoinstruction for addi arg1, arg2, 0
-            self.operands.append(RiscvOperand("0", self._block_labels))
-            self.execute_addi(state)
+            return self.execute_ret(state)
         else:
             raise Exception("Execute operand {} not handled.".format(self.opcode))
-        return no_jump
+        return result

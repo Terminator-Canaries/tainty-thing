@@ -21,21 +21,18 @@ class RiscvParser():
             self.data = file.readlines()
             instruction_lines = []
             for line in self.data:
+                # Need to keep \t in the middle of the line.
                 line = line.strip()
-
                 # Skip blank lines.
                 if not line:
                     continue
-
                 # Skip lines like: .file	"program.c" or .cfi_endproc.
                 # But not labels like: .Lfunc_end0:
                 if line[0] == '.'and ':' not in line:
                     continue
-
                 # Skip lines that are just comments like: # -- End function.
                 if line[0] == "#":
                     continue
-
                 # Found a block label.
                 if ':' in line:
                     # Strip off the extra comments from labels
@@ -44,7 +41,6 @@ class RiscvParser():
                     # Map the label to the instruction index.
                     self._labels[label] = len(instruction_lines)
                     continue
-
                 # Found an instruction.
                 instruction_lines.append(line)
 

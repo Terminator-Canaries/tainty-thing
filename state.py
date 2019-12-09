@@ -2,6 +2,7 @@
 state.py
 
 """
+import time
 
 ABI_TO_REGISTER_IDX = {
         'zero': 0,
@@ -81,9 +82,6 @@ class RiscvState():
             raise Exception("Instruction operand not register or memory")
 
     def get_operand_val(self, operand):
-        """
-        Returns the integer value of the given operand.
-        """
         if operand.is_register():
             return self.get_register(operand.register_idx)
         elif operand.is_memory():
@@ -115,8 +113,10 @@ class RiscvState():
 
     def set_register(self, reg, val):
         idx = self.get_reg_idx(reg)
-        if idx >= 0 and idx <= 32:
+        if idx > 0 and idx <= 32:
             self.registers[idx] = val
+        elif idx == 0:
+            return
         else:
             raise Exception("Attempt to write to invalid register")
 
@@ -129,11 +129,3 @@ class RiscvState():
         if location < 0 or location > self.MEM_SIZE:
             raise Exception("Memory write out of bounds")
         self.memory[location] = val
-
-
-
-
-
-
-
-
