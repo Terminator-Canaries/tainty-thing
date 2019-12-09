@@ -2,6 +2,10 @@
 taint.py
 
 Defines object representations necessary to track and propagate taint.
+
+* class TaintTracker - provides taint tracking abstractions for instruction-level tracking.
+For each instruction encountered, propagates taint based on the user provided taint policy.
+Maintains shadow memory and shadow registers, which correspond to regs/mem in interpreter state.
 """
 
 from collections import defaultdict
@@ -17,6 +21,7 @@ from instruction import (
     TAINT_OTHER,
 )
 
+# For heavy hitter tracking. Flags to know where taint destination is by opcode.
 TAINT_DEST = {
     "addi": 0,
     "add": 0,
@@ -43,17 +48,6 @@ TAINT_DEST = {
     "jalr": "jump",
     "lui": 0
 }
-
-
-# Defines rules for taint propagation.
-class TaintPolicy:
-    def __init__(self):
-        # Keep track of taint stats.
-        self.taint_level = 0
-        self.num_total_instr_run = 0
-        self.num_tainted_instr_run = 0
-        self.time_in_taint_mode = 0
-
 
 class TaintTracker:
     def __init__(self, state, policy):

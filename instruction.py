@@ -1,6 +1,11 @@
 """
 instruction.py
 
+Defines an object representation for RISC-V instructions.
+* class RiscvInstr - Parses tokens and creates an object for executing instructions.
+* class RiscvOperand - Represents an abstract righthand side operand.
+Stores information relevant to classifying operand types (mem refs, consts, regs).
+* class MemoryReference - Abstraction for representing mem reference operands. 
 """
 
 import re

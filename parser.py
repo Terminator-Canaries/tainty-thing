@@ -1,6 +1,9 @@
 """
-parsing.py
+parser.py
 
+Parses RISC binary. Tokenizes instruction-bearing lines.
+Stores file lines in '_data'.
+Stores tokenized instructions in '_instructions'.
 """
 
 from instruction import RiscvInstr

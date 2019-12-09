@@ -7,6 +7,7 @@ names as strings to a handler.
 A handler is a function of 3 arguments, the taint tracker (defined in taint.py), the state of
 the interpreter (defined in state.py), and the operands object (defined in instruction.py)
 """
+
 from instruction import SUPPORTED_FUNCTIONS
 from functools import partial
 

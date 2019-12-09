@@ -1,8 +1,17 @@
 """
 analyze.py
 
+* class Analyzer - Uploads the snapshotted state from the specified pickle_jar.
+Provides abstractions for plotting the change in register/memory taint across the 
+execution of the program. 
+Outputs generated graphs to the directory <pickle_jar_path>/data/
+--memory_graph and --register_graph flags determine which graphs to generate.
+
+# Example Execution.
+# analyzer.py --pickle_jar=<pickle_jar_path> --memory_graph --register_graph
 """
 
+import sys
 import os
 import click
 import pickle
@@ -10,11 +19,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from interpreter import *
-
-# How to execute.
-
-# analyzer.py pickle_jar --memory_graph --register_graph
-
 
 class Analyzer():
     def __init__(self, pickle_jar):

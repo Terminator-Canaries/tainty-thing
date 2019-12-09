@@ -1,6 +1,10 @@
 """
 interpreter.py
 
+Interpreter parses a RISCV file.
+Executing the binary, tracking taint according to the dynamic policy (default policy is in policy.py)
+* main - handles arguments, sets up pickling, initializes interpreter, sets up policy
+* class RiscvInterpreter - Runs the program instruction by instruction, taking snapshots regularly.
 """
 
 import sys
@@ -9,10 +13,9 @@ from instruction import *
 from parser import RiscvParser
 import pickle
 from state import RiscvState
-from taint import TaintPolicy, TaintTracker
+from taint import TaintTracker
 from policy import policy as policy_from_disk
 import shutil
-
 
 MEM_SIZE = 4096
 STACK_SIZE = 128

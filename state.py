@@ -2,6 +2,10 @@
 state.py
 
 Defines a class to keep track of current register and memory state.
+Holds registers and memory. Converts instructions in blocks dictionary into instruction objects.
+
+* ABI_TO_REGISTER_IDX - Maps RISCV instruction names to enumerations.
+* class RiscvState - State metadata, an array for memory, and a dictionary for register state.
 """
 
 ABI_TO_REGISTER_IDX = {
