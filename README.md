@@ -4,7 +4,7 @@
 
 #### Install llvm:
 
-        brew install llvm
+    brew install llvm
 
 #### Install Python 3.6 or higher
 
@@ -32,9 +32,9 @@
 If you get the error "llc: command not found" on OSX,
 you can probably fix it by adding `/usr/local/opt/llvm/bin/` to your path:
 
-        echo 'export PATH="/usr/local/opt/llvm/bin:$PATH"' >> ~/.bash_profile
+    echo 'export PATH="/usr/local/opt/llvm/bin:$PATH"' >> ~/.bash_profile
 
-        source ~/.bash_profile
+    source ~/.bash_profile
 
 #### Run the interpreter
 
