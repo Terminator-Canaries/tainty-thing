@@ -50,6 +50,7 @@ class RiscvInterpreter():
     def set_corresponding_block(self):
         pc = self.state.get_register('pc')
         prev_val = 0
+
         # Find the block containing the instruction pointer.
         for key, val in self.block_labels.items():
             if prev_val <= pc and pc <= val:

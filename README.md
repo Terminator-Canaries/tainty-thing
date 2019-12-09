@@ -85,3 +85,8 @@ Defines an object representation for RISC-V instructions.
 `taint.py`
 
 Defines object representations necessary to track and propagate taint.
+
+`backtrack.py`
+
+A proof of concept that our snapshotting works, and that snapshots contain enough 
+critical information to execute like normal from a saved snapshot.
