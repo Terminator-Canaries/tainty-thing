@@ -205,7 +205,7 @@ class TaintTracker:
         # For Heavy Hitter data
         self.propagation_history_track(opcode, operands)
 
-        self.print_only_tainted_registers()    
+        self.print_only_tainted_registers()
 
     # Determines whether taint was propagated.
     # Updates internal propagation_history dictionary.

@@ -1,8 +1,8 @@
 """
 state.py
 
+Defines a class to keep track of current register and memory state.
 """
-import time
 
 ABI_TO_REGISTER_IDX = {
         'zero': 0,

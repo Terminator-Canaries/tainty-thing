@@ -3,7 +3,6 @@ analyze.py
 
 """
 
-import sys
 import os
 import click
 import pickle
