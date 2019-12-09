@@ -10,17 +10,17 @@
 
 3. Optionally isolate your python environment with a tool like `virtualenv`:
 
-    * Install: `pip install virtualenv`
+* Install: `pip install virtualenv`
 
-    * Create: `virtualenv venv`
+* Create: `virtualenv venv`
 
-    * Activate: `source venv/bin/activate`
+* Activate: `source venv/bin/activate`
 
-    * Deactivate: `deactivate`
+* Deactivate: `deactivate`
 
 4. Install python dependencies:
 
-    `pip install -r requirements.txt`
+    pip install -r requirements.txt
 
 ## Run the interpreter
 

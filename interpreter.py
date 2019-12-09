@@ -66,6 +66,7 @@ class RiscvInterpreter():
             raise Exception("unsupported instruction: {}".format(instr.opcode))
             sys.exit(1)
         else:
+<<<<<<< Updated upstream
             # Final return in the program.
             if result == -1:
                 return False
@@ -84,6 +85,11 @@ class RiscvInterpreter():
                 if instr.opcode == "call":
                     self.current_function = result
                 return True
+=======
+            pc = self.state.get_register('pc')
+            self.state.set_register('pc', pc + 1)
+            return True
+>>>>>>> Stashed changes
 
     def run(self):
         pc = self.state.get_register('pc')
@@ -94,8 +100,15 @@ class RiscvInterpreter():
 
     def pickle_current_state(self, fileheader, pickle_jar):
         pc = self.state.get_register('pc')
+<<<<<<< Updated upstream
         file = open("{}/pickles/{}-instr{:03d}-line{:03d}".format(pickle_jar,
                     fileheader, self.pickle_count, pc), 'wb')
+=======
+
+        file = open("{}/pickles/{}-instr{:03d}-line{:03d}"
+                    .format(pickle_jar, fileheader, self.pickle_count, pc), 'wb')
+
+>>>>>>> Stashed changes
         self.pickle_count += 1
         pickle.dump(self, file)
 
