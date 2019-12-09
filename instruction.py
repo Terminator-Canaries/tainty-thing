@@ -268,7 +268,6 @@ class RiscvInstr:
             raise Exception("Function args not yet handled")
         # Set the return address to one after the current line.
         pc = state.get_register("pc")
-        print("\n### Current PC is ", pc)
         state.set_register("ra", pc+1)
         # Jump to the function name.
         jump_val = (self.operands[0]).get_target_name()
