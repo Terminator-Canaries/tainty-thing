@@ -58,16 +58,9 @@ Parses RISC binary.
 
 Interprets parsed RISC.
 
-* class RiscvInterpreter
-* main - handles arguments, sets up pickling, initializes interpreter, sets up policy
-
 `state.py`
 
 Holds registers and memory. Converts instructions in blocks dictionary into instruction objects.
-
-* ABI_TO_REGISTER_IDX
-* is_valid_register
-* class RiscvState
 
 `execution.py`
 
@@ -77,9 +70,6 @@ Defines functions that execute most common RISC instructions.
 
 Defines an object representation for RISC-V instructions.
 
-* class RiscvArg
-* class RiscvInstr
-
 #### Tainting
 
 `taint.py`
@@ -88,5 +78,9 @@ Defines object representations necessary to track and propagate taint.
 
 `backtrack.py`
 
-A proof of concept that our snapshotting works, and that snapshots contain enough 
+A proof of concept that our snapshotting works, and that snapshots contain enough
 critical information to execute like normal from a saved snapshot.
+
+#### Analysis
+
+`analyze.py`

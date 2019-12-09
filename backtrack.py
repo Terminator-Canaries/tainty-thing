@@ -1,3 +1,8 @@
+"""
+backtrack.py
+
+"""
+
 import sys
 import os
 import click
@@ -18,7 +23,7 @@ def backtrack(pickle_path):
     while(interpreter.run()):
         print("")
 
-    return 
+    return
 
 
 @click.command()

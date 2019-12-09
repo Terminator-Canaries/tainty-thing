@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+"""
+interpreter.py
+
+"""
 
 import sys
 import os

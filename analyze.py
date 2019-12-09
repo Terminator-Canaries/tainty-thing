@@ -1,3 +1,8 @@
+"""
+analyze.py
+
+"""
+
 import sys
 import os
 import click
@@ -23,10 +28,10 @@ class Analyzer():
     def load_pickle(self, filename):
         file = open("{}/pickles/{}".format(self.pickle_jar, filename), 'rb')
         return pickle.load(file)
-        
+
     def load_pickled_state(self):
         path = "{}/{}/pickles".format(self.wd, self.pickle_jar)
-        pickles = os.listdir(path)      
+        pickles = os.listdir(path)
         for pfile in pickles:
             intr = self.load_pickle(pfile)
             self.interpreterers.append(intr)
