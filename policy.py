@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from instruction import SUPPORTED_FUNCTIONS
+from functools import partial
 
 ## TAINT POLICY HANDLERS ##
 # A taint handler is function of arguments (tracker, state, operands).
@@ -13,6 +14,8 @@ from instruction import SUPPORTED_FUNCTIONS
 def taint_addi(tracker, state, operands):
     taint1 = tracker.get_operand_taint(operands[1])
     taint2 = tracker.get_operand_taint(operands[2])
+    print("Taint1 {} taint2 {}".format(taint1,taint2))
+    print(tracker.OR(taint1, taint2))
     tracker.replace_operand_taint(operands[0], tracker.OR(taint1, taint2))
 
 
@@ -78,7 +81,9 @@ def taint_ret(tracker, state, operands):
 # taint function op0
 def taint_call(tracker, state, operands):
     function_name = operands[0].get_target_name()
+    print(function_name)
     if function_name in SUPPORTED_FUNCTIONS:
+        print("############CALL")
         tracker.taint_source = SUPPORTED_FUNCTIONS[function_name]
     return
 
@@ -87,7 +92,6 @@ def taint_mv(tracker, state, operands):
     taint2 = tracker.get_operand_taint(operands[1])
     tracker.replace_operand_taint(operands[0], taint2)
     return
-
 
 def thunk(tracker, state, operands):
     pass
@@ -108,12 +112,16 @@ def taint_lw(tracker, state, operands):
     tracker.replace_operand_taint(operands[0], mem_taint)
     return
 
+def pc_wrapper(handler, tracker, state, operands):
+    pc = state.get_register('pc')
+    if  pc > 14 and pc < 18:
+        tracker.print_registers_taint()
+    handler(tracker, state,operands)
 
-## TAINT POLICY ##
 # A policy is a mapping of instruction string labels to their handlers.
 policy = {
-    "addi": taint_addi,
-    "add": taint_addi,
+    "addi": partial(pc_wrapper, handler=taint_addi),
+    "add": partial(pc_wrapper, handler=taint_addi),
     "sw": taint_sw,
     "call": taint_call,
     "mv": taint_mv,
@@ -123,5 +131,6 @@ policy = {
     "bne": thunk,
     "beq": thunk,
     "j": thunk,
-    "jalr": thunk
+    "jalr": thunk,
+    "lui": taint_mv
 }
