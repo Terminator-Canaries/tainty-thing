@@ -129,6 +129,7 @@ policy = {
     "lw": taint_lw,
     "blt": thunk,
     "bne": thunk,
+    "bnez": thunk,
     "beq": thunk,
     "j": thunk,
     "jalr": thunk,
