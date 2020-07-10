@@ -1,5 +1,7 @@
 # Tainty Thing
 
+Research project on dynamic taint analysis for CS 263 at Harvard.
+
 ## Setup on OSX
 
 #### Install llvm:
