@@ -1,6 +1,6 @@
 # Tainty Thing
 
-Research project on dynamic taint analysis for CS 263 at Harvard.
+Incredibly Formal And In Depth Research Project Completed Under The Direction Of The Illustrious James Mickens In Order To Further Our Universal Understanding Of Dynamic Taint Analysis. Copyright CS 263: Security Systems at Harvard College. All Rights Reserved.
 
 ## Setup on OSX
 
